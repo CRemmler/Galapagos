@@ -17,6 +17,8 @@ class window.SessionLite
     @widgetController.ractive.on('exportHtml',         (event) => @exportHtml(event))
     @widgetController.ractive.on('openNewFile',        (event) => @openNewFile())
     @widgetController.ractive.on('console.run',        (code)  => @run(code))
+    @widgetController.ractive.on('console.compileString', (code)  => @compileString(code))
+    @widgetController.ractive.on('console.runString',     (code)  => @runString(code))
     @drawEveryFrame = false
 
   modelTitle: ->
@@ -75,12 +77,14 @@ class window.SessionLite
     cancelAnimationFrame(@_eventLoopTimeout)
 
   recompile: ->
+    console.log("hey")
     # This is a temporary workaround for the fact that models can't be reloaded
     # without clearing the world. BCH 1/9/2015
     Tortoise.startLoading(=>
       world.clearAll()
       @widgetController.redraw()
       code = @widgetController.code()
+      console.log(code)
       codeCompile(code, [], [], @widgetController.widgets(), (res) =>
         if res.model.success
 
@@ -91,7 +95,7 @@ class window.SessionLite
           # FYI, this is also fundamentally broken by its reliance of widget indices.  --JAB (6/10/16)
           for { currentValue, type }, i in @widgetController.widgets() when type is "slider"
             sliderVals[i] = currentValue
-
+          console.log(res.model.result)
           globalEval(res.model.result)
           @widgetController.ractive.set('isStale',          false)
           @widgetController.ractive.set('lastCompiledCode', code)
@@ -105,7 +109,7 @@ class window.SessionLite
           @alertCompileError(res.model.result)
       , @alertCompileError)
     )
-
+    
   getNlogo: ->
     (new BrowserCompiler()).exportNlogo({
       info:         Tortoise.toNetLogoMarkdown(@widgetController.ractive.get('info')),
@@ -203,6 +207,29 @@ class window.SessionLite
   alertCompileError: (result) ->
     alertText = result.map((err) -> err.message).join('\n')
     @displayError(alertText)
+
+  compileCodeAndSet: (code, messageTag) ->
+    codeCompile(@widgetController.code(), [code], [], @widgetController.widgets(),
+      ({ commands, model: { result: modelResult, success: modelSuccess } }) =>
+        if modelSuccess
+          [{ result, success }] = commands
+          if (success)
+            socket.emit('send reporter', {
+              hubnetMessageSource: "server",
+              hubnetMessageTag: messageTag,
+              hubnetMessage: result })
+            myData[key] = result
+          else
+            @alertCompileError(result)
+        else
+          @alertCompileError(modelResult)
+    , @alertCompileError)
+
+  runCode: (code) ->
+            try window.handlingErrors(new Function(code))()
+            catch ex
+              if not (ex instanceof Exception.HaltInterrupt)
+                throw ex
 
 # See http://perfectionkills.com/global-eval-what-are-the-options/ for what
 # this is doing. This is a holdover till we get the model attaching to an

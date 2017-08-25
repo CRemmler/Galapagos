@@ -17,8 +17,12 @@ class window.SessionLite
     @widgetController.ractive.on('exportHtml',         (event) => @exportHtml(event))
     @widgetController.ractive.on('openNewFile',        (event) => @openNewFile())
     @widgetController.ractive.on('console.run',        (code)  => @run(code))
-    @widgetController.ractive.on('console.compileString', (code)  => @compileString(code))
-    @widgetController.ractive.on('console.runString',     (code)  => @runString(code))
+    @widgetController.ractive.on('console.compileObserverCode', (code, key)  => @run(code, key))
+    @widgetController.ractive.on('console.compileTurtleCode',   (code, who, key)  => @run(code, who, key))
+    @widgetController.ractive.on('console.compilePatchCode',    (code, pxcor, pycor, key)  => @run(code, pxcor, pycor, key))
+    @widgetController.ractive.on('console.runObserverCode',     (key)  => @run(key))
+    @widgetController.ractive.on('console.runTurtleCode',       (who, key)  => @run(who, key))
+    @widgetController.ractive.on('console.runPatchCode',        (pxcor, pycor, key)  => @run(pxcor, pycor, key))
     @drawEveryFrame = false
 
   modelTitle: ->
@@ -77,14 +81,12 @@ class window.SessionLite
     cancelAnimationFrame(@_eventLoopTimeout)
 
   recompile: ->
-    console.log("hey")
     # This is a temporary workaround for the fact that models can't be reloaded
     # without clearing the world. BCH 1/9/2015
     Tortoise.startLoading(=>
       world.clearAll()
       @widgetController.redraw()
       code = @widgetController.code()
-      console.log(code)
       codeCompile(code, [], [], @widgetController.widgets(), (res) =>
         if res.model.success
 
@@ -95,7 +97,6 @@ class window.SessionLite
           # FYI, this is also fundamentally broken by its reliance of widget indices.  --JAB (6/10/16)
           for { currentValue, type }, i in @widgetController.widgets() when type is "slider"
             sliderVals[i] = currentValue
-          console.log(res.model.result)
           globalEval(res.model.result)
           @widgetController.ractive.set('isStale',          false)
           @widgetController.ractive.set('lastCompiledCode', code)
@@ -208,6 +209,31 @@ class window.SessionLite
     alertText = result.map((err) -> err.message).join('\n')
     @displayError(alertText)
 
+  compileObserverCode: (code, key) ->
+    compileCodeAndSet(code, key);
+    
+  compileTurtleCode: (code, who, key) ->
+    code = "ask turtle "+who+" [ "+code+" ]"
+    key = key+":"+who+":"+key
+    compileCodeAndSet(code, key);
+    
+  compilePatchCode: (code, pxcor, pycor, key) ->
+    code = "ask patch "+pxcor+" "+pycor+" [ "+code+" ]"
+    key = key+":"+pxcor+":"+pycor+":"+key
+    compileCodeAndSet(code, key);
+      
+  runObserverCode: (key) ->
+    messageTag = key
+    runCode(myData[messageTag])
+        
+  runTurtleCode: (who, key) ->
+    messageTag = key+":"+who+":"+key
+    runCode(myData[messageTag])
+        
+  runPatchCode: (pxcor, pycor, key) ->
+    messageTag = key+":"+pxcor+":"+pycor+":"+key
+    runCode(myData[messageTag])    
+
   compileCodeAndSet: (code, messageTag) ->
     codeCompile(@widgetController.code(), [code], [], @widgetController.widgets(),
       ({ commands, model: { result: modelResult, success: modelSuccess } }) =>
@@ -218,7 +244,7 @@ class window.SessionLite
               hubnetMessageSource: "server",
               hubnetMessageTag: messageTag,
               hubnetMessage: result })
-            myData[key] = result
+            myData[messageTag] = result
           else
             @alertCompileError(result)
         else
@@ -230,6 +256,8 @@ class window.SessionLite
             catch ex
               if not (ex instanceof Exception.HaltInterrupt)
                 throw ex
+
+
 
 # See http://perfectionkills.com/global-eval-what-are-the-options/ for what
 # this is doing. This is a holdover till we get the model attaching to an

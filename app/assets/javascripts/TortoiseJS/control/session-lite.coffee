@@ -8,7 +8,7 @@ MAX_REDRAW_DELAY     = 1000
 REDRAW_EXP           = 2
 
 class window.SessionLite
-  constructor: (@widgetController, @displayError) ->
+  constructor: (@widgetController, lastCompileFailed, @displayError) ->
     @_eventLoopTimeout = -1
     @_lastRedraw = 0
     @_lastUpdate = 0
@@ -98,8 +98,9 @@ class window.SessionLite
           for { currentValue, type }, i in @widgetController.widgets() when type is "slider"
             sliderVals[i] = currentValue
           globalEval(res.model.result)
-          @widgetController.ractive.set('isStale',          false)
-          @widgetController.ractive.set('lastCompiledCode', code)
+          @widgetController.ractive.set('isStale',           false)
+          @widgetController.ractive.set('lastCompiledCode',  code)
+          @widgetController.ractive.set('lastCompileFailed', false)
           @widgetController.freshenUpWidgets(globalEval(res.widgets))
 
           for k, v of sliderVals
@@ -107,6 +108,7 @@ class window.SessionLite
             world.observer.setGlobal(variable, v)
 
         else
+          @widgetController.ractive.set('lastCompileFailed', true)
           @alertCompileError(res.model.result)
       , @alertCompileError)
     )
@@ -187,6 +189,51 @@ class window.SessionLite
       form.appendChild(field)
     form
 
+  # (Object[Any], ([{ config: Object[Any], results: Object[Array[Any]] }]) => Unit) => Unit
+  asyncRunBabyBehaviorSpace: (config, reaction) ->
+    Tortoise.startLoading(=>
+      reaction(@runBabyBehaviorSpace(config))
+      Tortoise.finishLoading()
+    )
+
+  # (Object[Any]) => [{ config: Object[Any], results: Object[Array[Any]] }]
+  runBabyBehaviorSpace: ({ parameterSet, repetitionsPerCombo, metrics, setupCode, goCode
+                         , stopConditionCode, iterationLimit }) ->
+
+    dumper                       = tortoise_require('engine/dump')
+    { last, map, toObject, zip } = tortoise_require('brazier/array')
+    { pipeline                 } = tortoise_require('brazier/function')
+
+    result = (new BrowserCompiler()).fromModel({ code: @widgetController.code(), widgets: @widgetController.widgets()
+                                               , commands: [setupCode, goCode]
+                                               , reporters: metrics.map((m) -> m.reporter).concat([stopConditionCode])
+                                               , turtleShapes: [], linkShapes: []
+                                               })
+
+    unwrapCompilation =
+      (prefix, defaultCode) -> ({ result: compiledCode, success }) ->
+        new Function("#{prefix}#{if success then compiledCode else defaultCode}")
+
+    [setup, go]      = result.commands .map(unwrapCompilation(""       , ""  ))
+    [metricFs..., _] = result.reporters.map(unwrapCompilation("return ", "-1"))
+    stopCondition    = unwrapCompilation("return ", "false")(last(result.reporters))
+
+    convert = ([{ reporter, interval }, f]) -> [reporter, { reporter: f, interval }]
+    compiledMetrics = pipeline(zip(metrics), map(convert), toObject)(metricFs)
+
+    massagedConfig = { parameterSet, repetitionsPerCombo, metrics: compiledMetrics
+                     , setup, go, stopCondition, iterationLimit }
+    setGlobal      = world.observer.setGlobal.bind(world.observer)
+
+    miniDump = (x) ->
+      if Array.isArray(x)
+        x.map(miniDump)
+      else if typeof(x) in ["boolean", "number", "string"]
+        x
+      else
+        dumper(x)
+
+    window.runBabyBehaviorSpace(massagedConfig, setGlobal, miniDump)
 
   run: (code) ->
     Tortoise.startLoading()
@@ -210,29 +257,29 @@ class window.SessionLite
     @displayError(alertText)
 
   compileObserverCode: (code, key) ->
-    compileCodeAndSet(code, key);
+    session.compileCodeAndSet(code, key);
     
   compileTurtleCode: (code, who, key) ->
     code = "ask turtle "+who+" [ "+code+" ]"
     key = key+":"+who+":"+key
-    compileCodeAndSet(code, key);
+    session.compileCodeAndSet(code, key);
     
   compilePatchCode: (code, pxcor, pycor, key) ->
     code = "ask patch "+pxcor+" "+pycor+" [ "+code+" ]"
     key = key+":"+pxcor+":"+pycor+":"+key
-    compileCodeAndSet(code, key);
+    session.compileCodeAndSet(code, key);
       
   runObserverCode: (key) ->
     messageTag = key
-    runCode(myData[messageTag])
+    session.runCode(myData[messageTag])
         
   runTurtleCode: (who, key) ->
     messageTag = key+":"+who+":"+key
-    runCode(myData[messageTag])
+    session.runCode(myData[messageTag])
         
   runPatchCode: (pxcor, pycor, key) ->
     messageTag = key+":"+pxcor+":"+pycor+":"+key
-    runCode(myData[messageTag])    
+    session.runCode(myData[messageTag])    
 
   compileCodeAndSet: (code, messageTag) ->
     codeCompile(@widgetController.code(), [code], [], @widgetController.widgets(),

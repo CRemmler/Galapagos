@@ -47,6 +47,7 @@ window.bindWidgets = (container, widgets, code, info, readOnly, filename) ->
     info,
     readOnly,
     lastCompiledCode:   code,
+    lastCompileFailed:  false,
     isStale:            false,
     exportForm:         false,
     modelTitle:         dropNLogoExtension(filename),
@@ -176,6 +177,12 @@ window.bindWidgets = (container, widgets, code, info, readOnly, filename) ->
       exportText = ractive.findComponent('outputWidget')?.get('text') ? ractive.findComponent('console').get('output')
       exportBlob = new Blob([exportText], {type: "text/plain:charset=utf-8"})
       saveAs(exportBlob, filename)
+      return
+    exportView: (filename) ->
+      anchor = document.createElement("a")
+      anchor.setAttribute("href", viewController.view.visibleCanvas.toDataURL("img/png"))
+      anchor.setAttribute("download", filename)
+      anchor.click()
       return
   }
 
@@ -566,11 +573,15 @@ template =
       {{/}}
       <label class="netlogo-tab{{#showCode}} netlogo-active{{/}}">
         <input id="code-tab-toggle" type="checkbox" checked="{{ showCode }}" />
-        <span class="netlogo-tab-text">NetLogo Code</span>
+        <span class="netlogo-tab-text{{#lastCompileFailed}} netlogo-widget-error{{/}}">NetLogo Code</span>
       </label>
       {{#showCode}}
         <editor code='{{code}}' lastCompiledCode='{{lastCompiledCode}}' readOnly='{{readOnly}}' />
       {{/}}
+      <div class="netlogo-gallery-tab">
+        <span class="netlogo-tab-text">Gallery</span>
+      </div>
+      <div class='netlogo-gallery-tab-content'></div>      
       <label class="netlogo-tab{{#showInfo}} netlogo-active{{/}}">
         <input id="info-toggle" type="checkbox" checked="{{ showInfo }}" />
         <span class="netlogo-tab-text">Model Info</span>

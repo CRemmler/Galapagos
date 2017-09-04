@@ -516,6 +516,15 @@ template =
       <editableTitle title="{{modelTitle}}" isEditing="{{isEditing}}"/>
       {{# !readOnly }}
         <div class="flex-column" style="align-items: flex-end;">
+          <div class="netlogo-export-wrapper" style="display: block;">
+            <span style="margin-right: 4px;">Export:</span> 
+            <button class="netlogo-ugly-button" on-click="exportnlogo">NetLogo</button>
+            <form action="exportGbccWorld" method="post" enctype="multipart/form-data" style="display: inline-block">
+              <input type="text" name="roomname" class="roomNameInput" style="display:none" value=""> 
+              <button class="netlogo-ugly-button" type="submit">World</button>
+            </form>
+          </div>
+          <!--
           <div class="netlogo-export-wrapper">
             <span style="margin-right: 4px;">File:</span>
             <button class="netlogo-ugly-button" on-click="openNewFile">New</button>
@@ -525,6 +534,8 @@ template =
             <button class="netlogo-ugly-button" on-click="exportnlogo">NetLogo</button>
             <button class="netlogo-ugly-button" on-click="exportHtml">HTML</button>
           </div>
+          -->
+          <button class="netlogo-ugly-button" id="exportHtmlButton" on-click="exportHtml">HTML</button>
         </div>
       {{/}}
     </div>

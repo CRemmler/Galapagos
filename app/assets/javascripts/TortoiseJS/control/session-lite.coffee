@@ -261,12 +261,12 @@ class window.SessionLite
     
   compileTurtleCode: (code, who, key) ->
     code = "ask turtle "+who+" [ "+code+" ]"
-    key = key+":"+who+":"+key
+    key = key+":"+who
     session.compileCodeAndSet(code, key);
     
   compilePatchCode: (code, pxcor, pycor, key) ->
     code = "ask patch "+pxcor+" "+pycor+" [ "+code+" ]"
-    key = key+":"+pxcor+":"+pycor+":"+key
+    key = key+":"+pxcor+":"+pycor
     session.compileCodeAndSet(code, key);
       
   runObserverCode: (key) ->
@@ -274,11 +274,11 @@ class window.SessionLite
     session.runCode(myData[messageTag])
         
   runTurtleCode: (who, key) ->
-    messageTag = key+":"+who+":"+key
+    messageTag = key+":"+who
     session.runCode(myData[messageTag])
         
   runPatchCode: (pxcor, pycor, key) ->
-    messageTag = key+":"+pxcor+":"+pycor+":"+key
+    messageTag = key+":"+pxcor+":"+pycor
     session.runCode(myData[messageTag])    
 
   compileCodeAndSet: (code, messageTag) ->

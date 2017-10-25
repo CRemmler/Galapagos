@@ -3,7 +3,7 @@
 package controllers
 
 import
-  javax.inject.{ Inject, Provider }
+  javax.inject.{ Inject }
 
 import
   models.ModelsLibrary,
@@ -56,4 +56,8 @@ class Application @Inject() ( assets: Assets
 
   def humans: Action[AnyContent] =
     assets.versioned(path="/public/text", "humans.txt")
+
+  def favicon: Action[AnyContent] =
+    assets.versioned(path="/public/images", file = "favicon.ico")
+
 }

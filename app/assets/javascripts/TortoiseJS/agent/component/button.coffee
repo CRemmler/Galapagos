@@ -18,8 +18,6 @@ ButtonEditForm = EditForm.extend({
         node.value = ""
     )
 
-  isolated: true
-
   twoway: false
 
   components: {
@@ -99,7 +97,8 @@ ButtonEditForm = EditForm.extend({
 window.RactiveButton = RactiveWidget.extend({
 
   data: -> {
-    errorClass:   undefined # String
+    contextMenuOptions: [@standardOptions(this).edit, @standardOptions(this).delete]
+  , errorClass:   undefined # String
   , ticksStarted: undefined # Boolean
   }
 
@@ -111,9 +110,7 @@ window.RactiveButton = RactiveWidget.extend({
 
   oninit: ->
     @_super()
-    @on('activateButton', (event, run) -> if @get('isEnabled') then run())
-
-  isolated: true
+    @on('activateButton', (_, run) -> if @get('isEnabled') then run())
 
   components: {
     editForm: ButtonEditForm
@@ -123,7 +120,6 @@ window.RactiveButton = RactiveWidget.extend({
   template:
     """
     {{>button}}
-    {{>contextMenu}}
     <editForm actionKey="{{widget.actionKey}}" display="{{widget.display}}"
               idBasis="{{id}}" isForever="{{widget.forever}}" source="{{widget.source}}"
               startsDisabled="{{widget.disableUntilTicksStart}}" type="{{widget.buttonKind}}" />
@@ -143,11 +139,11 @@ window.RactiveButton = RactiveWidget.extend({
     standardButton:
       """
       <button id="{{id}}"
-              on-contextmenu="showContextMenu:{{id + '-context-menu'}}"
+              on-contextmenu="@this.fire('showContextMenu', @event)"
               class="netlogo-widget netlogo-button netlogo-command{{# !isEnabled }} netlogo-disabled{{/}} {{errorClass}}"
               type="button"
               style="{{dims}}"
-              on-click="activateButton:{{widget.run}}">
+              on-click="@this.fire('activateButton', @this.get('widget.run'))">
         {{>buttonContext}}
         {{>label}}
         {{>actionKeyIndicator}}
@@ -157,7 +153,7 @@ window.RactiveButton = RactiveWidget.extend({
     foreverButton:
       """
       <label id="{{id}}"
-             on-contextmenu="showContextMenu:{{id + '-context-menu'}}"
+             on-contextmenu="@this.fire('showContextMenu', @event)"
              class="netlogo-widget netlogo-button netlogo-forever-button{{#widget.running}} netlogo-active{{/}} netlogo-command{{# !isEnabled }} netlogo-disabled{{/}} {{errorClass}}"
              style="{{dims}}">
         {{>buttonContext}}
@@ -178,16 +174,6 @@ window.RactiveButton = RactiveWidget.extend({
       {{elseif widget.buttonKind === "LINK" }}
         L
       {{/if}}
-      </div>
-      """
-
-    contextMenu:
-      """
-      <div id="{{id}}-context-menu" class="netlogo-widget-editor-menu-items">
-        <ul class="context-menu-list">
-          <li class="context-menu-item" on-click="editWidget">Edit</li>
-          <li class="context-menu-item" on-click="deleteWidget:{{id}},{{id + '-context-menu'}},{{widget.id}}">Delete</li>
-        </ul>
       </div>
       """
 

@@ -9,8 +9,6 @@ window.RactiveConsoleWidget = Ractive.extend({
     output: ''
   }
 
-  isolated: true
-
   computed: {
     agentType: {
       get: -> @get('agentTypes')[@get('agentTypeIndex')]
@@ -48,6 +46,8 @@ window.RactiveConsoleWidget = Ractive.extend({
       input = @get('input')
       if input.trim().length > 0
         agentType = @get('agentType')
+        if Converter.isReporter(input)
+          input = "show #{input}"
         @set('output', "#{@get('output')}#{agentType}> #{input}\n")
         history = @get('history')
         lastEntry = if history.length > 0 then history[history.length - 1] else {agentType: '', input: ''}
@@ -60,7 +60,7 @@ window.RactiveConsoleWidget = Ractive.extend({
         @set('input', '')
         @set('workingEntry', {})
 
-    @on('clear-history', (event) ->
+    @on('clear-history', ->
       @set('output', '')
     )
 
@@ -94,7 +94,7 @@ window.RactiveConsoleWidget = Ractive.extend({
   template:
     """
     <div class='netlogo-tab-content netlogo-command-center'
-         intro='grow:{disable:"console-toggle"}' outro='shrink:{disable:"console-toggle"}'>
+         grow-in='{disable:"console-toggle"}' shrink-out='{disable:"console-toggle"}'>
       <printArea id='command-center-print-area' output='{{output}}'/>
 
       <div class='netlogo-command-center-input'>

@@ -13,8 +13,6 @@ InputEditForm = EditForm.extend({
   , spacer:       RactiveEditFormSpacer
   }
 
-  isolated: true
-
   twoway: false
 
   validate: (form) ->
@@ -78,7 +76,9 @@ InputEditForm = EditForm.extend({
 
 window.RactiveInput = RactiveWidget.extend({
 
-  isolated: true
+  data: -> {
+    contextMenuOptions: [@standardOptions(this).edit, @standardOptions(this).delete]
+  }
 
   computed: {
     hexColor: { # String
@@ -111,6 +111,8 @@ window.RactiveInput = RactiveWidget.extend({
         false
     )
 
+  onrender: ->
+
     # Scroll to bottom on value change --JAB (8/17/16)
     @observe('widget.currentValue'
     , ->
@@ -126,7 +128,6 @@ window.RactiveInput = RactiveWidget.extend({
   template:
     """
     {{>input}}
-    {{>contextMenu}}
     <editForm idBasis="{{id}}" boxtype="{{widget.boxedValue.type}}" display="{{widget.display}}"
               {{# widget.boxedValue.type !== 'Color' && widget.boxedValue.type !== 'Number' }}
                 isMultiline="{{widget.boxedValue.multiline}}"
@@ -140,7 +141,7 @@ window.RactiveInput = RactiveWidget.extend({
     input:
       """
       <label id="{{id}}"
-             on-contextmenu="showContextMenu:{{id + '-context-menu'}}"
+             on-contextmenu="@this.fire('showContextMenu', @event)"
              class="netlogo-widget netlogo-input-box netlogo-input"
              style="{{dims}}">
         <div class="netlogo-label">{{widget.variable}}</div>
@@ -157,16 +158,6 @@ window.RactiveInput = RactiveWidget.extend({
           <input class="netlogo-multiline-input" style="margin: 0; width: 100%;" type="color" value="{{hexColor}}" />
         {{/}}
       </label>
-      """
-
-    contextMenu:
-      """
-      <div id="{{id}}-context-menu" class="netlogo-widget-editor-menu-items">
-        <ul class="context-menu-list">
-          <li class="context-menu-item" on-click="editWidget">Edit</li>
-          <li class="context-menu-item" on-click="deleteWidget:{{id}},{{id + '-context-menu'}},{{widget.id}}">Delete</li>
-        </ul>
-      </div>
       """
 
   }

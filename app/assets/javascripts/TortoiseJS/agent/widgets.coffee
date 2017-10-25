@@ -85,6 +85,7 @@ window.bindWidgets = (container, widgets, code, info, readOnly, filename) ->
     components: {
 
       console:       RactiveConsoleWidget,
+      contextMenu:   RactiveContextMenu,
       editableTitle: RactiveModelTitle,
       editor:        RactiveEditorWidget,
       infotab:       RactiveInfoTabWidget,
@@ -103,9 +104,7 @@ window.bindWidgets = (container, widgets, code, info, readOnly, filename) ->
       viewWidget:    RactiveView
 
     },
-    magic:      true,
-    data:    -> model,
-    oncomplete: attachWidgetMenus
+    data: -> model
   })
 
   container.querySelector('.netlogo-model').focus()
@@ -200,20 +199,19 @@ window.bindWidgets = (container, widgets, code, info, readOnly, filename) ->
     @set('height', Math.max.apply(Math, w.bottom for own i, w of @get('widgetObj') when w.bottom?))
   )
 
-  ractive.on('checkFocus', (event) ->
-    @set('hasFocus', document.activeElement is event.node)
+  ractive.on('checkFocus', (_, node) ->
+    @set('hasFocus', document.activeElement is node)
   )
 
-  ractive.on('checkActionKeys', (event) ->
+  ractive.on('checkActionKeys', (_, e) ->
     if @get('hasFocus')
-      e = event.original
       char = String.fromCharCode(if e.which? then e.which else e.keyCode)
       for _, w of @get('widgetObj') when w.type is 'button' and w.actionKey is char
         w.run()
   )
 
   ractive.on('*.renameInterfaceGlobal'
-  , (oldName, newName, value) ->
+  , (_, oldName, newName, value) ->
       if not existsInObj(({ variable }) -> variable is oldName)(@get('widgetObj'))
         world.observer.setGlobal(oldName, undefined)
       world.observer.setGlobal(newName, value)
@@ -240,7 +238,11 @@ window.bindWidgets = (container, widgets, code, info, readOnly, filename) ->
 
   controller = new WidgetController(ractive, model, widgetObj, viewController
                                   , plotOps, mouse, write, output, dialog, worldConfig, exporting)
-  setupInterfaceEditor(ractive, controller.removeWidgetById.bind(controller))
+
+  ractive.on('*.unregisterWidget', (_, id) -> controller.removeWidgetById(id))
+
+  setupInterfaceEditor(ractive)
+
   controller
 
 showErrors = (errors) ->
@@ -326,6 +328,8 @@ class window.WidgetController
     else
       @model.ticks = ''
       @model.ticksStarted = false
+
+    @ractive.update()
 
   # (Number) => Unit
   removeWidgetById: (id) ->
@@ -503,7 +507,9 @@ isValidValue = (widget, value) ->
 template =
   """
   <div class="netlogo-model" style="min-width: {{width}}px;"
-       tabindex="1" on-keydown="checkActionKeys" on-focus="checkFocus" on-blur="checkFocus">
+       tabindex="1" on-keydown="@this.fire('checkActionKeys', @event)"
+       on-focus="@this.fire('checkFocus', @node)"
+       on-blur="@this.fire('checkFocus', @node)">
     <div class="netlogo-header">
       <div class="netlogo-subheader">
         <div class="netlogo-powered-by">
@@ -540,13 +546,9 @@ template =
       {{/}}
     </div>
 
-    <div id="netlogo-widget-context-menu" class="widget-context-menu">
-      <div id='widget-creation-disabled-message' style="display: none;">
-        Widget creation is not yet available.  Check back soon.
-      </div>
-    </div>
-
     <div class="netlogo-interface-unlocker" style="display: none" on-click="toggleInterfaceLock"></div>
+
+    <contextMenu></contextMenu>
 
     <label class="netlogo-widget netlogo-speed-slider">
       <span class="netlogo-label">model speed</span>
@@ -557,7 +559,7 @@ template =
 
     <div style="position: relative; width: {{width}}px; height: {{height}}px"
          class="netlogo-widget-container"
-         on-contextmenu="showContextMenu:{{'widget-creation-disabled-message'}}">
+         on-contextmenu="@this.fire('showContextMenu', @event, 'widget-creation-disabled-message')">
       {{#widgetObj:key}}
         {{# type === 'view'     }} <viewWidget    id="{{>widgetID}}" dims="position: absolute; left: {{left}}; top: {{top}};" widget={{this}} ticks="{{ticks}}" /> {{/}}
         {{# type === 'textBox'  }} <labelWidget   id="{{>widgetID}}" dims="{{>dimensions}}" widget={{this}} /> {{/}}

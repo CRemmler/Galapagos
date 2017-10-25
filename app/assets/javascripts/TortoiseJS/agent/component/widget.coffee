@@ -1,4 +1,4 @@
-window.RactiveWidget = Ractive.extend({
+window.RactiveWidget = RactiveContextable.extend({
 
   data: -> {
     dims:   undefined # String
@@ -10,57 +10,54 @@ window.RactiveWidget = Ractive.extend({
     editForm: undefined # Element
   }
 
-  isolated: true
+  on: {
 
-  oninit: ->
+    editWidget: ->
+      @fire('hideContextMenu')
+      @findComponent('editForm').fire("showYourself")
+      false
 
-    @findComponent('editForm')?.fire("activateCloakingDevice")
+    init: ->
+      @findComponent('editForm')?.fire("activateCloakingDevice")
+      return
 
-    @on('editWidget'
-    , ->
-        @fire('hideContextMenu')
-        @findComponent('editForm').fire("showYourself")
+    "*.updateWidgetValue": (_, { proxies = {}, triggers = {}, values = {}}) ->
+
+      getByPath = (obj) -> (path) ->
+        path.split('.').reduce(((acc, x) -> acc[x]), obj)
+
+      try
+
+        widget = @get('widget')
+
+        triggerNames = Object.keys(triggers)
+
+        oldies = triggerNames.reduce(((acc, x) -> acc[x] = getByPath(widget)(x); acc), {})
+
+        for k, v of values
+          widget[k] = v
+
+        for k, v of proxies
+          widget.proxies[k] = v
+
+        eventArraysArray =
+          for name in triggerNames when getByPath(widget) isnt oldies[name]
+            triggers[name].map((f) -> f(oldies[name], getByPath(widget)))
+
+        events = [].concat(eventArraysArray...)
+
+        uniqueEvents =
+          events.reduce(((acc, x) -> if not acc.find((y) -> y.type is x.type)? then acc.concat([x]) else acc), [])
+
+        for event in uniqueEvents
+          event.run(this, widget)
+
+      catch ex
+        console.error(ex)
+      finally
         false
-    )
 
-    @on('*.updateWidgetValue'
-    , ({ proxies = {}, triggers = {}, values = {}}) ->
-
-        getByPath = (obj) -> (path) ->
-          path.split('.').reduce(((acc, x) -> acc[x]), obj)
-
-        try
-
-          widget = @get('widget')
-
-          triggerNames = Object.keys(triggers)
-
-          oldies = triggerNames.reduce(((acc, x) -> acc[x] = getByPath(widget)(x); acc), {})
-
-          for k, v of values
-            widget[k] = v
-
-          for k, v of proxies
-            widget.proxies[k] = v
-
-          eventArraysArray =
-            for name in triggerNames when getByPath(widget) isnt oldies[name]
-              triggers[name].map((f) -> f(oldies[name], getByPath(widget)))
-
-          events = [].concat(eventArraysArray...)
-
-          uniqueEvents =
-            events.reduce(((acc, x) -> if not acc.find((y) -> y.type is x.type)? then acc.concat([x]) else acc), [])
-
-          for event in uniqueEvents
-            event.run(this, widget)
-
-        catch ex
-          console.error(ex)
-        finally
-          false
-
-    )
+  }
 
 })
 

@@ -12,17 +12,12 @@ class window.SessionLite
     @_eventLoopTimeout = -1
     @_lastRedraw = 0
     @_lastUpdate = 0
-    @widgetController.ractive.on('*.recompile',        (event) => @recompile())
-    @widgetController.ractive.on('exportnlogo',        (event) => @exportnlogo(event))
-    @widgetController.ractive.on('exportHtml',         (event) => @exportHtml(event))
-    @widgetController.ractive.on('openNewFile',        (event) => @openNewFile())
-    @widgetController.ractive.on('console.run',        (code)  => @run(code))
-    @widgetController.ractive.on('console.compileObserverCode', (code, key)  => @run(code, key))
-    @widgetController.ractive.on('console.compileTurtleCode',   (code, who, key)  => @run(code, who, key))
-    @widgetController.ractive.on('console.compilePatchCode',    (code, pxcor, pycor, key)  => @run(code, pxcor, pycor, key))
-    @widgetController.ractive.on('console.runObserverCode',     (key)  => @run(key))
-    @widgetController.ractive.on('console.runTurtleCode',       (who, key)  => @run(who, key))
-    @widgetController.ractive.on('console.runPatchCode',        (pxcor, pycor, key)  => @run(pxcor, pycor, key))
+    @widgetController.ractive.on('*.recompile',        (_, event) => @recompile())
+    @widgetController.ractive.on('exportnlogo',        (_, event) => @exportnlogo(event))
+    @widgetController.ractive.on('exportHtml',         (_, event) => @exportHtml(event))
+    @widgetController.ractive.on('openNewFile',        (_, event) => @openNewFile())
+    @widgetController.ractive.on('console.run',        (_, code)  => @run(code))
+    @widgetController.ractive.set('lastCompileFailed', lastCompileFailed)
     @drawEveryFrame = false
 
   modelTitle: ->
@@ -97,6 +92,7 @@ class window.SessionLite
           # FYI, this is also fundamentally broken by its reliance of widget indices.  --JAB (6/10/16)
           for { currentValue, type }, i in @widgetController.widgets() when type is "slider"
             sliderVals[i] = currentValue
+
           globalEval(res.model.result)
           @widgetController.ractive.set('isStale',           false)
           @widgetController.ractive.set('lastCompiledCode',  code)
@@ -112,7 +108,7 @@ class window.SessionLite
           @alertCompileError(res.model.result)
       , @alertCompileError)
     )
-    
+
   getNlogo: ->
     (new BrowserCompiler()).exportNlogo({
       info:         Tortoise.toNetLogoMarkdown(@widgetController.ractive.get('info')),
@@ -255,56 +251,6 @@ class window.SessionLite
   alertCompileError: (result) ->
     alertText = result.map((err) -> err.message).join('\n')
     @displayError(alertText)
-
-  compileObserverCode: (code, key) ->
-    session.compileCodeAndSet(code, key);
-    
-  compileTurtleCode: (code, who, key) ->
-    code = "ask turtle "+who+" [ "+code+" ]"
-    key = key+":"+who
-    session.compileCodeAndSet(code, key);
-    
-  compilePatchCode: (code, pxcor, pycor, key) ->
-    code = "ask patch "+pxcor+" "+pycor+" [ "+code+" ]"
-    key = key+":"+pxcor+":"+pycor
-    session.compileCodeAndSet(code, key);
-      
-  runObserverCode: (key) ->
-    messageTag = key
-    session.runCode(myData[messageTag])
-        
-  runTurtleCode: (who, key) ->
-    messageTag = key+":"+who
-    session.runCode(myData[messageTag])
-        
-  runPatchCode: (pxcor, pycor, key) ->
-    messageTag = key+":"+pxcor+":"+pycor
-    session.runCode(myData[messageTag])    
-
-  compileCodeAndSet: (code, messageTag) ->
-    codeCompile(@widgetController.code(), [code], [], @widgetController.widgets(),
-      ({ commands, model: { result: modelResult, success: modelSuccess } }) =>
-        if modelSuccess
-          [{ result, success }] = commands
-          if (success)
-            socket.emit('send reporter', {
-              hubnetMessageSource: "server",
-              hubnetMessageTag: messageTag,
-              hubnetMessage: result })
-            myData[messageTag] = result
-          else
-            @alertCompileError(result)
-        else
-          @alertCompileError(modelResult)
-    , @alertCompileError)
-
-  runCode: (code) ->
-            try window.handlingErrors(new Function(code))()
-            catch ex
-              if not (ex instanceof Exception.HaltInterrupt)
-                throw ex
-
-
 
 # See http://perfectionkills.com/global-eval-what-are-the-options/ for what
 # this is doing. This is a holdover till we get the model attaching to an

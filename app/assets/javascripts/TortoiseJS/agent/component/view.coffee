@@ -63,8 +63,6 @@ ViewEditForm = EditForm.extend({
     }
   }
 
-  isolated: true
-
   twoway: false
 
   components: {
@@ -209,19 +207,17 @@ ViewEditForm = EditForm.extend({
 window.RactiveView = RactiveWidget.extend({
 
   data: -> {
-    ticks: undefined # String
+    contextMenuOptions: [@standardOptions(this).edit]
+    ticks:              undefined # String
   }
 
   components: {
     editForm: ViewEditForm
   }
 
-  isolated: true
-
   template:
     """
     {{>view}}
-    {{>contextMenu}}
     <editForm idBasis="view"
               maxX="{{widget.dimensions.maxPxcor}}" maxY="{{widget.dimensions.maxPycor}}"
               minX="{{widget.dimensions.minPxcor}}" minY="{{widget.dimensions.minPycor}}"
@@ -236,18 +232,9 @@ window.RactiveView = RactiveWidget.extend({
     view:
       """
       <div id="{{id}}"
-           on-contextmenu="showContextMenu:{{id + '-context-menu'}}"
+           on-contextmenu="@this.fire('showContextMenu', @event)"
            class="netlogo-widget netlogo-view-container"
            style="{{dims}}">
-      </div>
-      """
-
-    contextMenu:
-      """
-      <div id="{{id}}-context-menu" class="netlogo-widget-editor-menu-items">
-        <ul class="context-menu-list">
-          <li class="context-menu-item" on-click="editWidget">Edit</li>
-        </ul>
       </div>
       """
 

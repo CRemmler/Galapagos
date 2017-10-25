@@ -33,7 +33,7 @@ private[controllers] trait EnvironmentHolder {
 private[controllers] object CompilerService {
 
   import
-    org.nlogo.tortoise.CompiledModel,
+    org.nlogo.tortoise.compiler.CompiledModel,
       CompiledModel.CompileResult
 
   // Outer validation indicates the validity of the model representation, whereas CompileResult indicates whether the
@@ -66,7 +66,7 @@ private[controllers] object CompilationRequestHandler {
     org.nlogo.{ core, tortoise },
       core.{ Model, Shape },
         Shape.{ LinkShape, VectorShape },
-      tortoise.{ json => tortoisejson },
+      tortoise.compiler.{ json => tortoisejson },
         tortoisejson.{ ShapeToJsonConverters, TortoiseJson },
           ShapeToJsonConverters.{ readLinkShapes, readVectorShapes }
 
@@ -140,23 +140,15 @@ private[controllers] trait CompilationRequestHandler extends RequestResultGenera
     controllers.PlayUtil.EnhancedRequest
 
   import
-    akka.stream.scaladsl.StreamConverters
-
-  import
     scalaz.NonEmptyList
 
   import
     org.nlogo.{ core, tortoise },
       core.CompilerException,
-      tortoise.CompiledModel
+      tortoise.compiler.CompiledModel
 
   import
-    play.api.{ http, libs, mvc },
-      http.HttpEntity.Streamed,
-      libs.{ concurrent, iteratee },
-        iteratee.Enumerator,
-        concurrent.Execution.Implicits.defaultContext,
-      mvc.{ Action => ActionType, AnyContent, ResponseHeader, Result }
+    play.api.mvc.{ Action => ActionType, AnyContent, Result }
 
   import
     CompilationRequestHandler.{ generateFromCode, generateFromNlogo, generateFromUrl => gfu, ModelObject, ModelResult, ModelText }
@@ -311,7 +303,7 @@ private[controllers] trait RequestResultGenerator {
 
     val webjarURLs =
       Seq(
-        "lib/filesaver.js/FileSaver.js",
+        "lib/filesaver/FileSaver.js",
         "lib/google-caja/html-sanitizer-minified.js",
         "lib/markdown-js/markdown.js",
         "lib/mousetrap/mousetrap.js",
@@ -338,6 +330,7 @@ private[controllers] trait RequestResultGenerator {
         "javascripts/TortoiseJS/agent/component/editform/variable.js",
         "javascripts/TortoiseJS/agent/component/editform/fontsize.js",
         "javascripts/TortoiseJS/agent/component/editform/editform.js",
+        "javascripts/TortoiseJS/agent/component/contextmenu.js",
         "javascripts/TortoiseJS/agent/component/tickcounter.js",
         "javascripts/TortoiseJS/agent/component/printarea.js",
         "javascripts/TortoiseJS/agent/component/widget.js",
@@ -363,6 +356,7 @@ private[controllers] trait RequestResultGenerator {
         "javascripts/TortoiseJS/agent/view.js",
         "javascripts/TortoiseJS/agent/widgets.js",
         "javascripts/TortoiseJS/communication/connection.js",
+        "javascripts/TortoiseJS/control/babybehaviorspace.js",
         "javascripts/TortoiseJS/control/tortoise.js",
         "javascripts/TortoiseJS/control/session-lite.js",
         "javascripts/plot/highchartsops.js",

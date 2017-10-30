@@ -18,6 +18,12 @@ class window.SessionLite
     @widgetController.ractive.on('openNewFile',        (_, event) => @openNewFile())
     @widgetController.ractive.on('console.run',        (_, code)  => @run(code))
     @widgetController.ractive.set('lastCompileFailed', lastCompileFailed)
+    @widgetController.ractive.on('console.compileObserverCode', (code, key)  => @run(code, key))
+    @widgetController.ractive.on('console.compileTurtleCode',   (code, who, key)  => @run(code, who, key))
+    @widgetController.ractive.on('console.compilePatchCode',    (code, pxcor, pycor, key)  => @run(code, pxcor, pycor, key))
+    @widgetController.ractive.on('console.runObserverCode',     (key)  => @run(key))
+    @widgetController.ractive.on('console.runTurtleCode',       (who, key)  => @run(who, key))
+    @widgetController.ractive.on('console.runPatchCode',        (pxcor, pycor, key)  => @run(pxcor, pycor, key))
     @drawEveryFrame = false
 
   modelTitle: ->
@@ -251,6 +257,55 @@ class window.SessionLite
   alertCompileError: (result) ->
     alertText = result.map((err) -> err.message).join('\n')
     @displayError(alertText)
+
+  compileObserverCode: (code, key) ->
+    @compileCodeAndSet(code, key);
+    
+  compileTurtleCode: (code, who, key) ->
+    code = "ask turtle "+who+" [ "+code+" ]"
+    key = who+":"+key
+    @compileCodeAndSet(code, key);
+    
+  compilePatchCode: (code, pxcor, pycor, key) ->
+    code = "ask patch "+pxcor+" "+pycor+" [ "+code+" ]"
+    key = pxcor+":"+pycor+":"+key
+    @compileCodeAndSet(code, key);
+      
+  runObserverCode: (key) ->
+    messageTag = key
+    @runCode(myData[messageTag])
+        
+  runTurtleCode: (who, key) ->
+    messageTag = who+":"+key
+    @runCode(myData[messageTag])
+        
+  runPatchCode: (pxcor, pycor, key) ->
+    messageTag = pxcor+":"+pycor+":"+key
+    @runCode(myData[messageTag])    
+
+  compileCodeAndSet: (code, messageTag) ->
+    codeCompile(@widgetController.code(), [code], [], @widgetController.widgets(),
+      ({ commands, model: { result: modelResult, success: modelSuccess } }) =>
+        if modelSuccess
+          [{ result, success }] = commands
+          if (success)
+            socket.emit('send reporter', {
+              hubnetMessageSource: "server",
+              hubnetMessageTag: messageTag,
+              hubnetMessage: result })
+            myData[messageTag] = result
+          else
+            @alertCompileError(result)
+        else
+          @alertCompileError(modelResult)
+    , @alertCompileError)
+
+  runCode: (code) ->
+            try window.handlingErrors(new Function(code))()
+            catch ex
+              if not (ex instanceof Exception.HaltInterrupt)
+                throw ex
+
 
 # See http://perfectionkills.com/global-eval-what-are-the-options/ for what
 # this is doing. This is a holdover till we get the model attaching to an

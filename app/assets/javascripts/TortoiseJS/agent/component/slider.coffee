@@ -50,7 +50,7 @@ SliderEditForm = EditForm.extend({
       ,          max: @findComponent('formMaxCode' ).findComponent('codeContainer').get('code')
       ,          min: @findComponent('formMinCode' ).findComponent('codeContainer').get('code')
       ,         step: @findComponent('formStepCode').findComponent('codeContainer').get('code')
-      ,        units: form.units.value
+      ,        units: (if form.units.value isnt "" then form.units.value else undefined)
       ,     variable: form.variable.value.toLowerCase()
       }
     }
@@ -85,7 +85,7 @@ SliderEditForm = EditForm.extend({
       <spacer height="15px" />
 
       <div class="flex-row" style="align-items: center;">
-        <labeledInput id="{{id}}-value" labelStr="Value:" name="value" required type="number" value="{{value}}"
+        <labeledInput id="{{id}}-value" labelStr="Default value:" name="value" type="number" value="{{value}}" attrs="required step='any'"
                       style="flex-grow: 1; text-align: right;" />
         <labeledInput id="{{id}}-units" labelStr="Units:" labelStyle="margin-left: 10px;" name="units" type="text" value="{{units}}"
                       style="flex-grow: 1; padding: 4px;" />
@@ -93,8 +93,8 @@ SliderEditForm = EditForm.extend({
 
       <spacer height="15px" />
 
-      <formCheckbox id="{{id}}-vertical" isChecked="{{ direction === 'vertical' }}" labelText="Vertical? (not yet supported)"
-                    name="vertical" disabled="true" />
+      <formCheckbox id="{{id}}-vertical" isChecked="{{ direction === 'vertical' }}" labelText="Vertical?"
+                    name="vertical" />
       """
 
   }
@@ -117,7 +117,7 @@ window.RactiveSlider = RactiveWidget.extend({
     {{>slider}}
     <editForm direction="{{widget.direction}}" idBasis="{{id}}" maxCode="{{widget.max}}"
               minCode="{{widget.min}}" stepCode="{{widget.step}}" units="{{widget.units}}"
-              value="{{widget.currentValue}}" variable="{{widget.variable}}" />
+              value="{{widget.default}}" variable="{{widget.variable}}" />
     """
 
   partials: {
@@ -127,7 +127,7 @@ window.RactiveSlider = RactiveWidget.extend({
       <label id="{{id}}"
              on-contextmenu="@this.fire('showContextMenu', @event)"
              class="netlogo-widget netlogo-slider netlogo-input {{errorClass}}"
-             style="{{dims}}">
+             style="{{widget.direction == "vertical" ? vdims : dims}}">
         <input type="range"
                max="{{widget.maxValue}}" min="{{widget.minValue}}"
                step="{{widget.stepValue}}" value="{{widget.currentValue}}" />

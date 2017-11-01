@@ -137,14 +137,17 @@ window.bindWidgets = (container, widgets, code, info, readOnly, filename) ->
     peekY: viewController.mouseYcor
   }
 
-  write = (str) -> model.consoleOutput += str
+  write = (str) -> ractive.findComponent('console').appendText(str)
 
   output = {
-    clear: -> model.outputWidgetOutput = ""
+    clear:
+      () ->
+        output = ractive.findComponent('outputWidget')
+        if (output?) then output.setText('')
     write:
       (str) ->
         output = ractive.findComponent('outputWidget')
-        (output ? ractive.findComponent('console')).appendText(str)
+        if (output?) then output.appendText(str)
   }
 
   # `yesOrNo` should eventually be changed to use a proper synchronous, three-button,
@@ -559,13 +562,13 @@ template =
 
     <div style="position: relative; width: {{width}}px; height: {{height}}px"
          class="netlogo-widget-container"
-         on-contextmenu="@this.fire('showContextMenu', @event, 'widget-creation-disabled-message')">
+         on-contextmenu="@this.fire('showContextMenu', @event)">
       {{#widgetObj:key}}
         {{# type === 'view'     }} <viewWidget    id="{{>widgetID}}" dims="position: absolute; left: {{left}}; top: {{top}};" widget={{this}} ticks="{{ticks}}" /> {{/}}
         {{# type === 'textBox'  }} <labelWidget   id="{{>widgetID}}" dims="{{>dimensions}}" widget={{this}} /> {{/}}
         {{# type === 'switch'   }} <switchWidget  id="{{>widgetID}}" dims="{{>dimensions}}" widget={{this}} /> {{/}}
         {{# type === 'button'   }} <buttonWidget  id="{{>widgetID}}" dims="{{>dimensions}}" widget={{this}} errorClass="{{>errorClass}}" ticksStarted="{{ticksStarted}}"/> {{/}}
-        {{# type === 'slider'   }} <sliderWidget  id="{{>widgetID}}" dims="{{>dimensions}}" widget={{this}} errorClass="{{>errorClass}}" /> {{/}}
+        {{# type === 'slider'   }} <sliderWidget  id="{{>widgetID}}" dims="{{>dimensions}}" vdims="{{>verticalDimensions}}" widget={{this}} errorClass="{{>errorClass}}" /> {{/}}
         {{# type === 'chooser'  }} <chooserWidget id="{{>widgetID}}" dims="{{>dimensions}}" widget={{this}} /> {{/}}
         {{# type === 'monitor'  }} <monitorWidget id="{{>widgetID}}" dims="{{>dimensions}}" widget={{this}} errorClass="{{>errorClass}}" /> {{/}}
         {{# type === 'inputBox' }} <inputWidget   id="{{>widgetID}}" dims="{{>dimensions}}" widget={{this}} /> {{/}}
@@ -618,6 +621,15 @@ partials = {
     position: absolute;
     left: {{ left }}px; top: {{ top }}px;
     width: {{ right - left }}px; height: {{ bottom - top }}px;
+    """
+
+  verticalDimensions:
+    """
+    position: absolute;
+    left: {{ left }}px; top: {{ top }}px;
+    width: {{ bottom - top }}px; height: {{ right - left }}px;
+    transform: translateY({{ bottom - top }}px) rotate(270deg);
+    transform-origin: top left;
     """
 
   widgetID:

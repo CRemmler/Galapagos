@@ -38,7 +38,7 @@ ButtonEditForm = EditForm.extend({
                      actionKey: (if key.length is 1 then key.toUpperCase() else null)
       ,             buttonKind: @_displayToType(form.type.value)
       , disableUntilTicksStart: form.startsDisabled.checked
-      ,                display: form.display.value
+      ,                display: (if form.display.value isnt "" then form.display.value else undefined)
       ,                forever: form.forever.checked
       ,                 source: @findComponent('formCode').findComponent('codeContainer').get('code')
       }
@@ -167,11 +167,11 @@ window.RactiveButton = RactiveWidget.extend({
     buttonContext:
       """
       <div class="netlogo-button-agent-context">
-      {{#if widget.buttonKind === "TURTLE" }}
+      {{#if widget.buttonKind === "Turtle" }}
         T
-      {{elseif widget.buttonKind === "PATCH" }}
+      {{elseif widget.buttonKind === "Patch" }}
         P
-      {{elseif widget.buttonKind === "LINK" }}
+      {{elseif widget.buttonKind === "Link" }}
         L
       {{/if}}
       </div>

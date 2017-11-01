@@ -28,7 +28,7 @@ MonitorEditForm = EditForm.extend({
         source: [WidgetEventGenerators.recompile]
       }
     , values: {
-          display: form.display.value
+          display: (if form.display.value isnt "" then form.display.value else undefined)
       ,  fontSize: parseInt(form.fontSize.value)
       , precision: parseInt(form.precision.value)
       ,    source: @findComponent('formCode').findComponent('codeContainer').get('code')
@@ -54,14 +54,13 @@ MonitorEditForm = EditForm.extend({
 
       <spacer height="15px" />
 
-      <div class="flex-row" style="align-items: center;
-                  justify-content: space-between; margin: 0 50px 0 0;">
+      <div class="flex-row" style="align-items: center; justify-content: space-between;">
 
         <label for="{{id}}">Decimal places: </label>
         <input  id="{{id}}" name="precision" placeholder="(Required)"
                 style="font-size: 20px; height: 28px; padding: 2px;"
                 type="number" value="{{precision}}" min=-30 max=17 step=1 required />
-
+        <spacer width="50px" />
         <formFontSize id="{{id}}-font-size" name="fontSize" value="{{fontSize}}"/>
 
       </div>
@@ -86,7 +85,6 @@ window.RactiveMonitor = RactiveWidget.extend({
   template:
     """
     {{>monitor}}
-    {{>contextMenu}}
     <editForm idBasis="{{id}}" display="{{widget.display}}" fontSize="{{widget.fontSize}}"
               precision="{{widget.precision}}" source="{{widget.source}}" />
     """

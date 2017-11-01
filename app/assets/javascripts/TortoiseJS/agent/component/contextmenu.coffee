@@ -14,7 +14,7 @@ window.RactiveContextable = Ractive.extend({
         component.fire('hideContextMenu')
         component.fire('unregisterWidget', component.get('widget').id)
     }
-  , edit: { text:   "Edit", isEnabled: true, action: -> component.fire('editWidget') }
+  , edit: { text: "Edit", isEnabled: true, action: -> component.fire('editWidget') }
   }
 
 })
@@ -23,31 +23,31 @@ window.RactiveContextMenu = Ractive.extend({
 
   data: -> {
     options: undefined # ContextMenuOptions
+  , visible: false     # Boolean
   }
 
   on: {
 
     coverThineself: ->
-      if @el?
-        contextMenu               = @find("#netlogo-widget-context-menu")
-        contextMenu.style.display = "none"
+      @set('visible', false)
       return
 
     revealThineself: (_, options, x, y) ->
       @set('options', options)
-      contextMenu               = @find("#netlogo-widget-context-menu")
-      contextMenu.style.top     = "#{y}px"
-      contextMenu.style.left    = "#{x}px"
-      contextMenu.style.display = "block"
+      @set('visible', true)
+      contextMenu            = @find("#netlogo-widget-context-menu")
+      contextMenu.style.top  = "#{y}px"
+      contextMenu.style.left = "#{x}px"
       return
 
   }
 
   template:
     """
+    {{# visible }}
     <div id="netlogo-widget-context-menu" class="widget-context-menu">
       {{# options === undefined }}
-        <div id='widget-creation-disabled-message' style="display: none;">
+        <div id="widget-creation-disabled-message">
           Widget creation is not yet available.  Check back soon.
         </div>
       {{ else }}
@@ -64,6 +64,7 @@ window.RactiveContextMenu = Ractive.extend({
         </div>
       {{/}}
     </div>
+    {{/}}
     """
 
 })

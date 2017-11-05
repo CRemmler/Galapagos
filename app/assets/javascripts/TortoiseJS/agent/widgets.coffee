@@ -137,7 +137,7 @@ window.bindWidgets = (container, widgets, code, info, readOnly, filename) ->
     peekY: viewController.mouseYcor
   }
 
-  write = (str) -> ractive.findComponent('console').appendText(str)
+  write = (str) -> model.consoleOutput += str
 
   output = {
     clear:

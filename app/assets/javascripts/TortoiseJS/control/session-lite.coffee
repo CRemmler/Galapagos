@@ -18,9 +18,9 @@ class window.SessionLite
     @widgetController.ractive.on('openNewFile',        (_, event) => @openNewFile())
     @widgetController.ractive.on('console.run',        (_, code)  => @run(code))
     @widgetController.ractive.set('lastCompileFailed', lastCompileFailed)
-    @widgetController.ractive.on('console.compileObserverCode', (code, key)  => @run(code, key))
-    @widgetController.ractive.on('console.compileTurtleCode',   (code, who, key)  => @run(code, who, key))
-    @widgetController.ractive.on('console.compilePatchCode',    (code, pxcor, pycor, key)  => @run(code, pxcor, pycor, key))
+    @widgetController.ractive.on('console.compileObserverCode', (key, value)  => @run(key, value))
+    @widgetController.ractive.on('console.compileTurtleCode',   (who, key, value)  => @run(who, key, value))
+    @widgetController.ractive.on('console.compilePatchCode',    (pxcor, pycor, key, value)  => @run(pxcor, pycor, key, value))
     @widgetController.ractive.on('console.runObserverCode',     (key)  => @run(key))
     @widgetController.ractive.on('console.runTurtleCode',       (who, key)  => @run(who, key))
     @widgetController.ractive.on('console.runPatchCode',        (pxcor, pycor, key)  => @run(pxcor, pycor, key))
@@ -258,18 +258,18 @@ class window.SessionLite
     alertText = result.map((err) -> err.message).join('\n')
     @displayError(alertText)
 
-  compileObserverCode: (code, key) ->
-    @compileCodeAndSet(code, key);
+  compileObserverCode: (key, value) ->
+    @compileCodeAndSet(key, value);
     
-  compileTurtleCode: (code, who, key) ->
-    code = "ask turtle "+who+" [ "+code+" ]"
+  compileTurtleCode: (who, key, value) ->
+    value = "ask turtle "+who+" [ "+value+" ]"
     key = who+":"+key
-    @compileCodeAndSet(code, key);
+    @compileCodeAndSet(key, value);
     
-  compilePatchCode: (code, pxcor, pycor, key) ->
-    code = "ask patch "+pxcor+" "+pycor+" [ "+code+" ]"
+  compilePatchCode: (pxcor, pycor, key, value) ->
+    value = "ask patch "+pxcor+" "+pycor+" [ "+value+" ]"
     key = pxcor+":"+pycor+":"+key
-    @compileCodeAndSet(code, key);
+    @compileCodeAndSet(key, value);
       
   runObserverCode: (key) ->
     messageTag = key
@@ -283,7 +283,7 @@ class window.SessionLite
     messageTag = pxcor+":"+pycor+":"+key
     @runCode(myData[messageTag])    
 
-  compileCodeAndSet: (code, messageTag) ->
+  compileCodeAndSet: (messageTag, code) ->
     codeCompile(@widgetController.code(), [code], [], @widgetController.widgets(),
       ({ commands, model: { result: modelResult, success: modelSuccess } }) =>
         if modelSuccess

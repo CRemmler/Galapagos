@@ -530,6 +530,7 @@ template =
             <button class="netlogo-ugly-button" on-click="exportnlogo">NetLogo</button>
             <form action="exportGbccWorld" method="post" enctype="multipart/form-data" style="display: inline-block">
               <input type="text" name="roomname" class="roomNameInput" style="display:none" value=""> 
+              <input type="text" name="schoolname" class="schoolNameInput" style="display:none" value=""> 
               <button class="netlogo-ugly-button" type="submit">World</button>
             </form>
           </div>

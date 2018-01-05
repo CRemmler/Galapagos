@@ -2,6 +2,7 @@ class window.AgentStreamController
   constructor: (@container, fontSize) ->
     @view = new View(fontSize)
     @turtleDrawer = new TurtleDrawer(@view)
+    @imageLayer = new ImageLayer(@view)
     @drawingLayer = new DrawingLayer(@view, @turtleDrawer)
     @patchDrawer = new PatchDrawer(@view)
     @spotlightDrawer = new SpotlightDrawer(@view)
@@ -76,6 +77,7 @@ class window.AgentStreamController
   repaint: ->
     @view.transformToWorld(@model.world)
     @patchDrawer.repaint(@model)
+    @imageLayer.repaint()
     @drawingLayer.repaint(@model)
     @turtleDrawer.repaint(@model)
     @spotlightDrawer.repaint(@model)
@@ -298,7 +300,26 @@ Possible drawing events:
   }
 }
 
+{ type: "zoom", scale }
+
+{ type: "reset-zoom" }
+
+
 ###
+
+class ImageLayer extends Drawer
+  constructor: (@view) ->
+    @canvas    = document.createElement('canvas')
+    @canvas.id = 'ilayer'
+    @ctx       = @canvas.getContext('2d')
+
+  repaint: () ->
+    
+    img = document.getElementById("imageLayer");
+    if img != null
+      return @view.ctx.drawImage(img, 0, 0, 858, 858);
+    else
+      return @view.ctx.drawImage(@canvas, 0, 0);
 
 class DrawingLayer extends Drawer
   constructor: (@view, @turtleDrawer) ->
@@ -382,6 +403,8 @@ class DrawingLayer extends Drawer
         when 'clear-drawing' then @clearDrawing()
         when 'line'          then @drawLine(event)
         when 'stamp-image'   then @drawStamp(event)
+        when 'zoom'          then @view.setZoom(event.scale)
+        when 'reset-zoom'    then @view.setZoom(Math.floor(@view.worldWidth / 2))
     )
 
   repaint: (model) ->

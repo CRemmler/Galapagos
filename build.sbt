@@ -24,7 +24,7 @@ scalacOptions ++= Seq(
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, org.nlogo.PlayScrapePlugin)
 
-val tortoiseVersion = "1.0-5836705-dirty"
+val tortoiseVersion = "1.0-ef47dac"
 
 libraryDependencies ++= Seq(
   ehcache,
@@ -33,8 +33,8 @@ libraryDependencies ++= Seq(
   "org.nlogo" % "compilerjvm" % tortoiseVersion,
   "org.nlogo" % "netlogowebjs" % tortoiseVersion,
   "com.typesafe.play" %% "play-iteratees" % "2.6.1",
-  "com.typesafe.akka" %% "akka-testkit" % "2.5.3" % "test",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.1" % "test"
+  "com.typesafe.akka" %% "akka-testkit" % "2.5.8" % "test",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % "test"
 )
 
 libraryDependencies ++= Seq(
@@ -42,12 +42,11 @@ libraryDependencies ++= Seq(
   "org.webjars.bower" % "filesaver" % "1.3.3",
   "org.webjars.npm" % "mousetrap" % "1.6.1",
   "org.webjars.bower" % "google-caja" % "6005.0.0",
-  "org.webjars" % "highcharts" % "5.0.14",
+  "org.webjars" % "highcharts" % "6.0.4",
   "org.webjars" % "jquery" % "3.2.1",
   "org.webjars" % "markdown-js" % "0.5.0-1",
-  "org.webjars.npm" % "ractive" % "0.9.0",
-  "org.webjars" % "codemirror" % "5.24.2",
-  "org.webjars.bower" % "github-com-highcharts-export-csv" % "1.4.3"
+  "org.webjars.npm" % "ractive" % "0.9.3",
+  "org.webjars" % "codemirror" % "5.33.0"
 )
 
 resolvers += bintray.Opts.resolver.repo("netlogo", "TortoiseAux")
@@ -63,20 +62,7 @@ GalapagosAssets.settings
 // Used in Prod
 pipelineStages ++= Seq(digest)
 
-// Also used in Dev mode
-pipelineStages in Assets ++= Seq(autoprefixer)
-
 fork in Test := false
-
-includeFilter in autoprefixer := Def.setting {
-  val webJarDir     = (webJarsDirectory in Assets).value.getPath
-  val testWebJarDir = (webJarsDirectory in TestAssets).value.getPath
-  new FileFilter {
-    override def accept(file: java.io.File) = {
-      file.getName.endsWith(".css") && ! (file.getPath.contains(webJarDir) || file.getPath.contains(testWebJarDir))
-    }
-  }
-}.value
 
 routesGenerator := InjectedRoutesGenerator
 
@@ -117,7 +103,10 @@ scrapePublishCredential := (Def.settingDyn {
 }).value
 
 scrapePublishBucketID := (Def.settingDyn {
-  val branchDeploy = Map("master" -> "netlogo-web-prod-content")
+  val branchDeploy = Map(
+    "master"  -> "netlogo-web-prod-content",
+    "staging" -> "netlogo-web-staging-content"
+  )
 
   if (isJenkins)
     Def.setting { branchDeploy.get(jenkinsBranch) }
@@ -126,7 +115,10 @@ scrapePublishBucketID := (Def.settingDyn {
 }).value
 
 scrapePublishDistributionID := (Def.settingDyn {
-  val branchPublish = Map("master" -> "E3AIHWIXSMPCAI")
+  val branchPublish = Map(
+    "master"  -> "E3AIHWIXSMPCAI",
+    "staging" -> "E360I3EFLPUZR0"
+  )
 
   if (isJenkins)
     Def.setting { branchPublish.get(jenkinsBranch) }
@@ -134,4 +126,9 @@ scrapePublishDistributionID := (Def.settingDyn {
     Def.setting { branchPublish.get("master") }
 }).value
 
-scrapeAbsoluteURL := Some("netlogoweb.org")
+scrapeAbsoluteURL := (Def.settingDyn {
+  if (isJenkins && jenkinsBranch == "staging")
+    Def.setting { Some("staging.netlogoweb.org") }
+  else
+    Def.setting { Some("netlogoweb.org") }
+}).value

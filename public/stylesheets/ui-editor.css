@@ -42,7 +42,12 @@
   user-select:   none;
 }
 
-.context-menu-item:hover {
+.context-menu-item.disabled {
+  color:  #999;
+  cursor: default;
+}
+
+.context-menu-item:hover:not(.disabled) {
   background-color: #0066aa;
   color:            white;
 }
@@ -65,7 +70,7 @@
   padding:          8px 10px;
   position:         absolute;
   width:            200px;
-  z-index:          10;
+  z-index:          80;
 }
 
 .widget-edit-popup {
@@ -86,6 +91,14 @@
 
 .widget-edit-form label {
   user-select: none;
+}
+
+.widget-edit-form-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  height: 100%;
+  position: relative;
+  width: 100%;
+  z-index: 95;
 }
 
 .widget-edit-form-title {
@@ -119,6 +132,10 @@
   font-size: 20px;
 }
 
+.widget-edit-checkbox-wrapper {
+  white-space: nowrap;
+}
+
 .widget-edit-checkbox {
   height: 13px;
 }
@@ -143,8 +160,15 @@
 
 .widget-edit-dropdown {
   font-size: 14px;
-  height:    20px;
+  height:    30px;
   margin:    0 10px;
+}
+
+.widget-edit-inputbox {
+  font-size:   20px;
+  height:      33px;
+  margin-left: 10px;
+  padding:      4px;
 }
 
 .widget-edit-textbox {
@@ -160,4 +184,16 @@
 
 .widget-edit-legend {
   user-select: none;
+}
+
+.widget-selected {
+  z-index: 50;
+}
+
+.widget-resize-handle {
+  background-color: #727272;
+  height:           10px;
+  width:            10px;
+  position:         absolute;
+  z-index:          60;
 }

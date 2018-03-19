@@ -187,12 +187,6 @@
   height: 500px;
 }
 
-.netlogo-toggle-edit-mode {
-  display: block;
-  margin: 0;
-  margin-bottom: 10px;
-}
-
 .netlogo-info {
   flex: 1;
   margin-top: 0;
@@ -223,7 +217,7 @@
 }
 
 .netlogo-command-center-editor .CodeMirror {
-  border: 1px solid #eee;
+  border: 1px solid #878782;
   height: auto;
 }
 
@@ -289,8 +283,8 @@
     padding: 0px;
 }
 
-.netlogo-disabled {
-  color: grey;
+.netlogo-disabled, .interface-unlocked {
+  color: #707070;
 }
 
 .netlogo-button.clear-button {
@@ -373,8 +367,8 @@
   background-color: transparent;
   height: 22px;
   margin: 0px;
-  margin-bottom: -5px;
-  margin-top: 2px;
+  margin-bottom: -3px;
+  margin-top: -1px;
   padding: 0px;
   width: 100%;
 }
@@ -440,6 +434,8 @@
 
 .netlogo-multiline-input {
   flex-grow: 1;
+  height:    0; /* This is a hack to get Input widget labels the right heights in Firefox --JAB (11/23/17) */
+  width:     auto; /* This is a hack to get input type="number" widgets sized correctly in Firefox -JMB Jan 2018 */
   margin:    4px;
   resize:    none;
 }
@@ -454,6 +450,11 @@
 .netlogo-plot {
     box-sizing: content-box; /* otherwise border gets cut off -- BCH 11/9/2014 */
     border: 1px solid black;
+    overflow: visible; /* must come after the .netlogo-widget declaration - JMB November 2017 */
+}
+
+.highcharts-container {
+  overflow: visible !important; /* Let our context-menus be free - JMB November 2017 */
 }
 
 .netlogo-forever-button > input {
@@ -485,4 +486,8 @@
 
 .CodeMirror {
   height: auto;
+}
+
+.CodeMirror-scroll.cm-disabled {
+  background-color: #ebebe4;
 }

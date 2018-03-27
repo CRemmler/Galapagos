@@ -104,10 +104,14 @@ template =
             <span style="margin-right: 4px;">File:</span>
             <button class="netlogo-ugly-button" on-click="open-new-file"{{#isEditing}} disabled{{/}}>New</button>
           </div>
-          <div class="netlogo-export-wrapper">
-            <span style="margin-right: 4px;">Export:</span>
+          <div class="netlogo-export-wrapper" style="display: block;">
+            <span style="margin-right: 4px;">Export:</span> 
             <button class="netlogo-ugly-button" on-click="export-nlogo"{{#isEditing}} disabled{{/}}>NetLogo</button>
-            <button class="netlogo-ugly-button" on-click="export-html"{{#isEditing}} disabled{{/}}>HTML</button>
+            <form action="exportGbccWorld" method="post" enctype="multipart/form-data" style="display: inline-block">
+              <input type="text" name="roomname" class="roomNameInput" style="display:none" value=""> 
+              <input type="text" name="schoolname" class="schoolNameInput" style="display:none" value=""> 
+              <button class="netlogo-ugly-button" type="submit">World</button>
+            </form>
           </div>
         </div>
       {{/}}
@@ -160,6 +164,10 @@ template =
       {{#showCode}}
         <codePane code='{{code}}' lastCompiledCode='{{lastCompiledCode}}' lastCompileFailed='{{lastCompileFailed}}' isReadOnly='{{isReadOnly}}' />
       {{/}}
+        <div class="netlogo-gallery-tab">
+          <span class="netlogo-tab-text">Gallery</span>
+        </div>
+        <div class='netlogo-gallery-tab-content'></div>      
       <label class="netlogo-tab{{#showInfo}} netlogo-active{{/}}">
         <input id="info-toggle" type="checkbox" checked="{{ showInfo }}" />
         <span class="netlogo-tab-text">Model Info</span>

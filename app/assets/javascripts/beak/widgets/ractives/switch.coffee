@@ -52,13 +52,18 @@ window.RactiveSwitch = RactiveWidget.extend({
   }
 
   eventTriggers: ->
-    { variable: [@_weg.recompile, @_weg.rename] }
+    recompileEvent =
+      if @findComponent('editForm').get('amProvingMyself') then @_weg.recompileLite else @_weg.recompile
+    { variable: [recompileEvent, @_weg.rename] }
+
+  minWidth:  35
+  minHeight: 33
 
   template:
     """
+    {{>editorOverlay}}
     {{>switch}}
     <editForm idBasis="{{id}}" display="{{widget.display}}" />
-    {{>editorOverlay}}
     """
 
   # coffeelint: disable=max_line_length
@@ -66,7 +71,7 @@ window.RactiveSwitch = RactiveWidget.extend({
 
     switch:
       """
-      <label id="{{id}}" class="netlogo-widget netlogo-switcher netlogo-input{{#isEditing}} interface-unlocked{{/}}" style="{{dims}}">
+      <label id="{{id}}" class="netlogo-widget netlogo-switcher netlogo-input {{classes}}" style="{{dims}}">
         <input type="checkbox" checked="{{ widget.currentValue }}" {{# isEditing }} disabled{{/}} />
         <span class="netlogo-label">{{ widget.display }}</span>
       </label>

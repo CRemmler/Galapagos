@@ -47,10 +47,10 @@
 
   <ul>
     <li>Most of the NetLogo programming language</li>
-    <li>Plotting</li>
     <li>The Command Center</li>
     <li>Editable "Code" and "Info" tabs</li>
-    <li>Functioning widgets of all kinds</li>
+    <li>Widgets</li>
+    <li>Authoring support</li>
     <li>The ability to export models for use in the desktop edition of NetLogo</li>
     <li>The ability to export models as standalone HTML pages</li>
   </ul>
@@ -58,16 +58,15 @@
   @linkableHeader("deficiencies", "What features of NetLogo does NetLogo Web lack at the moment?")
 
   <ul>
-    <li>Many of the less-common NetLogo language primitives</li>
     <li>High performance</li>
-    <li>An interface editor</li>
     <li>Extensions</li>
     <li>Reading from and writing to external files</li>
     <li>3D models and the "3D View" of 2D models</li>
     <li>HubNet</li>
     <li>BehaviorSpace</li>
     <li>Other less-central NetLogo features (e.g., System Dynamics Modeler)</li>
-    <li>Some less-common widget configurations (e.g., vertical sliders)</li>
+    <li>NetLogo language primitives relating to any of the above</li>
+    <li>NetLogo language primitives relating to some kinds imports and exports</li>
   </ul>
 
   <p>That said, there are very few things in NetLogo that have been left
@@ -118,26 +117,29 @@
 
   @linkableHeader("creating-models", "How can I write new models with NetLogo Web?")
 
-  <p>Long story short: You can't (yet).</p>
+  <p>Click the "File: New" button in the top-right of any NetLogo Web model
+     in order to open a fresh model.</p>
 
-  <p>NetLogo Web allows you to edit model code and "Info" content, but it
-     is not currently possible to create or edit interface widgets (e.g.,
-     buttons, sliders, monitors, etc.), which severely limits the authoring
-     power available within NetLogo Web. This is one of the foremost things
-     that we intend to improve in the near future. For now, though, all
-     serious model-authoring tasks can only be handled in the standard,
-     desktop edition of NetLogo. The "Upload a Model" button in NetLogo
-     Web can be used to open models created in the desktop edition of
-     NetLogo.</p>
+  <p>For further information about NetLogo's authoring tools, please see
+     <a href="/docs/authoring">"Authoring in NetLogo Web"</a>.</p>
+
+  @linkableHeader("loading", "How can I open a model in NetLogo Web?")
+
+  <p>Firstly, the NetLogo Models Library is easily accessible in NetLogo
+     Web. To open a model from the Models Library, simply select it in the
+     "Search the Models Library" dropdown.  In that dropdown, models that
+     work in NetLogo Web are selectable, while models that don't work yet
+     are grayed out.</p>
+
+  <p>The other option for opening models in NetLogo Web is to click the
+     file-selection button labelled "Upload a Model", and then select
+     a model on your computer. Note that opening a model in this way
+     does <em>not</em> save your model remotely anywhere. In fact, the
+     "Upload a Model" file picker simply asks your web browser to open
+     a file from your computer in such a way that the model never even
+     leaves your computer when it is "uploaded".</p>
 
   @linkableHeader("saving", "How can I save models from NetLogo Web?")
-
-  <p>First, a model must be opened in NetLogo Web.  This can be done by
-     choosing a model from the Models Library dropdown, or by clicking the
-     file-selection button next to "Upload a Model" to navigate to a
-     model located on your computer and open it in NetLogo Web. Note that
-     opening a model in this way does not save your model remotely anywhere.
-     In fact, when doing this, the model never leaves your computer at all.</p>
 
   <p>If you would like to save the model that is currently open in NetLogo
      Web (including any changes that you might have made to it), NetLogo Web
@@ -158,16 +160,9 @@
      NetLogo or NetLogo Web.</p>
 
   <p>With a model downloaded from NetLogo Web, you can use the desktop
-     version of NetLogo to make whatever changes to the model that you
+     version of NetLogo, make whatever changes to the model that you
      would like, save those changes, and then open the new version of
      the model in NetLogo Web (using "Upload a Model" in NetLogo Web, like before).</p>
-
-  <p>Using the desktop version of NetLogo to edit models can be especially
-     helpful for working around NetLogo Web's currently-limited
-     functionality for editing models (e.g., the lack of widget authoring),
-     and this, for now, is the recommended way of improving your models for
-     use in NetLogo Web.  We do recognize that this workflow is somewhat
-     inconvenient, and we have plans to improve it soon.</p>
 
   @linkableHeader("hosting-nlw-files", "What are my options for hosting NetLogo Web files?")
 
@@ -218,14 +213,13 @@
      link, using the URL of the model on the web server for the
      <code><strong>modelURL</strong></code> value.</p>
 
-  @linkableHeader("generate-simple-pages", "Is there an automatic way to generate a model page everytime I create a new version of my model?")
+  @linkableHeader("generate-simple-pages", "Is there an automatic way to generate a model page every time I create a new version of my model?")
 
   <p>You can link to <code>//netlogoweb.org/web?<strong>modelURL</strong></code>
-     (where <code><strong>modelURL</strong></code> is the URL of your model).  Everytime
-     someone goes to that link (or an iframe is loaded that uses that link
-     as the source URL), the most recent version of your model will be
-     fetched from <code><strong>modelURL</strong></code> and turned into a simple model
-     page.</p>
+     (where <code><strong>modelURL</strong></code> is the URL of your model).  Every
+     time someone goes to that link (or an iframe is loaded that uses that link as
+     the source URL), the most recent version of your model will be fetched from
+     <code><strong>modelURL</strong></code> and turned into a simple model page.</p>
 
   <p>While this generally should not be a problem, this method requires
      having an active connection to our website (netlogoweb.org) in order

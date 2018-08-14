@@ -54,8 +54,7 @@ InputEditForm = EditForm.extend({
       <spacer height="15px" />
       <div class="flex-row" style="align-items: center;">
         <formDropdown id="{{id}}-boxtype" name="boxtype" label="Type" selected="{{boxtype}}"
-                      choices="['Number', 'String', 'Color', 'String (reporter)', 'String (commands)']"
-                      disableds="['String (reporter)', 'String (commands)']" /> <!-- Disabled until `run`/`runresult` work on strings --JAB (6/8/16) -->
+                      choices="['String', 'Number', 'Color', 'String (reporter)', 'String (commands)']" />
         <formCheckbox id="{{id}}-multiline-checkbox" isChecked={{isMultiline}} labelText="Multiline"
                       name="multiline" disabled="typeof({{isMultiline}}) === 'undefined'" />
       </div>
@@ -73,31 +72,38 @@ window.RactiveInput = RactiveWidget.extend({
     contextMenuOptions: [@standardOptions(this).edit, @standardOptions(this).delete]
   }
 
-  computed: {
-    hexColor: { # String
-      get: ->
-        try netlogoColorToHexString(@get('widget').currentValue)
-        catch ex
-          "#000000"
-      set: (hex) ->
-        color =
-          try hexStringToNetlogoColor(hex)
-          catch ex
-            0
-        @set('widget.currentValue', color)
-        return
-    }
-  }
-
   components: {
-    editForm: InputEditForm
-  , editor:   RactiveCodeContainerMultiline
+    colorInput: RactiveColorInput
+  , editForm:   InputEditForm
+  , editor:     RactiveCodeContainerMultiline
   }
 
   eventTriggers: ->
-    { variable: [@_weg.recompile, @_weg.rename] }
+    amProvingSelf  = @findComponent('editForm').get('amProvingMyself')
+    recompileEvent = if amProvingSelf then @_weg.recompileLite else @_weg.recompile
+    {
+      currentValue: [@_weg.updateEngineValue]
+    ,     variable: [recompileEvent, @_weg.rename]
+    }
 
   on: {
+
+    # We get this event even when switching boxtypes (from Command/Reporter to anything else).
+    # However, this is a problem for Color and Number Inputs, because the order of things is:
+    #
+    #   * Set new default value (`0`)
+    #   * Plug it into the editor (where it converts to `"0"`)
+    #   * Update the data model with this value
+    #   * Throw out the editor and replace it with the proper HTML element
+    #   * Oh, gosh, my number is actually a string
+    #
+    # The proper fix is really to get rid of the editor before stuffing the new value into it,
+    # but that sounds fidgetty.  This fix is also fidgetty, but it's only fidgetty here, for Inputs;
+    # other widget types are left unbothered by this. --JAB (4/16/18)
+    'code-changed': (_, newValue) ->
+      if @get('widget').boxedValue.type.includes("String ")
+        @set('widget.currentValue', newValue)
+      false
 
     'handle-keypress': ({ original: { keyCode, target } }) ->
       if (not @get('widget.boxedValue.multiline')) and keyCode is 13 # Enter key in single-line input
@@ -123,15 +129,18 @@ window.RactiveInput = RactiveWidget.extend({
 
   }
 
+  minWidth:  70
+  minHeight: 43
+
   template:
     """
+    {{>editorOverlay}}
     {{>input}}
     <editForm idBasis="{{id}}" boxtype="{{widget.boxedValue.type}}" display="{{widget.display}}"
               {{# widget.boxedValue.type !== 'Color' && widget.boxedValue.type !== 'Number' }}
                 isMultiline="{{widget.boxedValue.multiline}}"
               {{/}} value="{{widget.currentValue}}"
               />
-    {{>editorOverlay}}
     """
 
   # coffeelint: disable=max_line_length
@@ -139,7 +148,7 @@ window.RactiveInput = RactiveWidget.extend({
 
     input:
       """
-      <label id="{{id}}" class="netlogo-widget netlogo-input-box netlogo-input{{#isEditing}} interface-unlocked{{/}}" style="{{dims}}">
+      <label id="{{id}}" class="netlogo-widget netlogo-input-box netlogo-input {{classes}}" style="{{dims}}">
         <div class="netlogo-label">{{widget.variable}}</div>
         {{# widget.boxedValue.type === 'Number'}}
           <input class="netlogo-multiline-input" type="number" value="{{widget.currentValue}}" lazy="true" {{# isEditing }}disabled{{/}} />
@@ -148,10 +157,10 @@ window.RactiveInput = RactiveWidget.extend({
           <textarea class="netlogo-multiline-input" value="{{widget.currentValue}}" on-keypress="handle-keypress" lazy="true" {{# isEditing }}disabled{{/}} ></textarea>
         {{/}}
         {{# widget.boxedValue.type === 'String (reporter)' || widget.boxedValue.type === 'String (commands)' }}
-          <editor extraClasses="['netlogo-multiline-input']" id="{{id}}-code" injectedConfig="{ scrollbarStyle: 'null' }" style="height: 50%;" code="{{widget.currentValue}}" isDisabled="{{isEditing}}" />
+          <editor extraClasses="['netlogo-multiline-input']" id="{{id}}-code" injectedConfig="{ scrollbarStyle: 'null' }" style="height: 50%;" initialCode="{{widget.currentValue}}" isDisabled="{{isEditing}}" />
         {{/}}
         {{# widget.boxedValue.type === 'Color'}}
-          <input class="netlogo-multiline-input" style="margin: 0; width: 100%;" type="color" value="{{hexColor}}" {{# isEditing }}disabled{{/}} />
+          <colorInput class="netlogo-multiline-input" style="margin: 0; width: 100%;" value="{{widget.currentValue}}" isEnabled="{{!isEditing}}" />
         {{/}}
       </label>
       """

@@ -8,7 +8,7 @@ MonitorEditForm = EditForm.extend({
   }
 
   components: {
-    formCode:     RactiveEditFormCodeContainer
+    formCode:     RactiveEditFormMultilineCode
   , formFontSize: RactiveEditFormFontSize
   , labeledInput: RactiveEditFormLabeledInput
   , spacer:       RactiveEditFormSpacer
@@ -24,9 +24,11 @@ MonitorEditForm = EditForm.extend({
   # Ractive's), so the `textarea` doesn't have the correct value when we get here.  It's much, much
   # more straight-forward to just go digging in the form component for its value. --JAB (4/21/16)
   genProps: (form) ->
+    fontSize = parseInt(form.fontSize.value)
     {
         display: (if form.display.value isnt "" then form.display.value else undefined)
-    ,  fontSize: parseInt(form.fontSize.value)
+    ,  fontSize
+    ,    bottom: @parent.get('widget.top') + (2 * fontSize) + 23
     , precision: parseInt(form.precision.value)
     ,    source: @findComponent('formCode').findComponent('codeContainer').get('code')
     }
@@ -80,12 +82,15 @@ window.RactiveMonitor = RactiveWidget.extend({
   eventTriggers: ->
     { source: [@_weg.recompile] }
 
+  minWidth:  20
+  minHeight: 45
+
   template:
     """
+    {{>editorOverlay}}
     {{>monitor}}
     <editForm idBasis="{{id}}" display="{{widget.display}}" fontSize="{{widget.fontSize}}"
               precision="{{widget.precision}}" source="{{widget.source}}" />
-    {{>editorOverlay}}
     """
 
   # coffeelint: disable=max_line_length
@@ -93,7 +98,7 @@ window.RactiveMonitor = RactiveWidget.extend({
 
     monitor:
       """
-      <div id="{{id}}" class="netlogo-widget netlogo-monitor netlogo-output{{#isEditing}} interface-unlocked{{/}}"
+      <div id="{{id}}" class="netlogo-widget netlogo-monitor netlogo-output {{classes}}"
            style="{{dims}} font-size: {{widget.fontSize}}px;">
         <label class="netlogo-label {{errorClass}}" on-click="show-errors">{{widget.display || widget.source}}</label>
         <output class="netlogo-value">{{widget.currentValue}}</output>

@@ -28,11 +28,11 @@ window.EditForm = Ractive.extend({
 
     submit: ({ node }) ->
       try
-        @set('amProvingMyself', false)
         newProps = @genProps(node)
         if newProps?
           @fire('update-widget-value', {}, newProps)
       finally
+        @set('amProvingMyself', false)
         @fire('activate-cloaking-device')
         return false
 
@@ -53,7 +53,8 @@ window.EditForm = Ractive.extend({
       elem = @getElem()
       elem.focus()
 
-      @fire('lock-selection', @parent)
+      @fire(  'lock-selection', @parent)
+      @fire('edit-form-opened', this)
 
       container     = findParentByClass('netlogo-widget-container')(elem)
       containerMidX = container.offsetWidth  / 2
@@ -72,6 +73,7 @@ window.EditForm = Ractive.extend({
     'activate-cloaking-device': ->
       @set('visible', false)
       @fire('unlock-selection')
+      @fire('edit-form-closed', this)
       if @get('amProvingMyself')
         @fire('has-been-proven-unworthy')
       false

@@ -3,12 +3,24 @@ ChooserEditForm = EditForm.extend({
   data: -> {
     choices: undefined # String
   , display: undefined # String
+  , setHiddenInput: ( # We do this so we can validate the contents of the CodeMirror input --JAB (5/14/18)
+      (code) ->
+        elem        = this.find("##{@get('id')}-choices-hidden")
+        elem.value  = code
+        validityStr =
+          try
+            Converter.stringToJSValue("[#{code}]")
+            ""
+          catch ex
+            "Invalid format: Must be a space-separated list of NetLogo literal values"
+        elem.setCustomValidity(validityStr)
+    )
   }
 
   twoway: false
 
   components: {
-    formCode:     RactiveEditFormCodeContainer
+    formCode:     RactiveEditFormMultilineCode
   , formVariable: RactiveEditFormVariable
   }
 
@@ -36,7 +48,10 @@ ChooserEditForm = EditForm.extend({
       """
       <formVariable id="{{id}}-varname" value="{{display}}"        name="varName" />
       <formCode     id="{{id}}-choices" value="{{chooserChoices}}" name="codeChoices"
-                    label="Choices" config="{}" style="" />
+                    label="Choices" config="{}" style="" onchange="{{setHiddenInput}}" />
+      <input id="{{id}}-choices-hidden" name="trueCodeChoices" class="all-but-hidden"
+             style="margin: -5px 0 0 7px;" type="text" />
+      <div class="widget-edit-hint-text">Example: "a" "b" "c" 1 2 3</div>
       """
 
   }
@@ -55,15 +70,21 @@ window.RactiveChooser = RactiveWidget.extend({
   }
 
   eventTriggers: ->
+    recompileEvent =
+      if @findComponent('editForm').get('amProvingMyself') then @_weg.recompileLite else @_weg.recompile
     {
        choices: [@_weg.refreshChooser]
-    , variable: [@_weg.recompile, @_weg.rename]
+    , variable: [recompileEvent, @_weg.rename]
     }
+
+  minWidth:  55
+  minHeight: 45
 
   # coffeelint: disable=max_line_length
   template:
     """
-    <label id="{{id}}" class="netlogo-widget netlogo-chooser netlogo-input{{#isEditing}} interface-unlocked{{/}}" style="{{dims}}">
+    {{>editorOverlay}}
+    <label id="{{id}}" class="netlogo-widget netlogo-chooser netlogo-input {{classes}}" style="{{dims}}">
       <span class="netlogo-label">{{widget.display}}</span>
       <select class="netlogo-chooser-select" value="{{widget.currentValue}}"{{# isEditing }} disabled{{/}} >
       {{#widget.choices}}
@@ -72,7 +93,6 @@ window.RactiveChooser = RactiveWidget.extend({
       </select>
     </label>
     <editForm idBasis="{{id}}" choices="{{widget.choices}}" display="{{widget.display}}" />
-    {{>editorOverlay}}
     """
 
   partials: {

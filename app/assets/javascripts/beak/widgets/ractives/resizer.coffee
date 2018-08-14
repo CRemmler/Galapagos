@@ -1,13 +1,12 @@
 window.RactiveResizer = Ractive.extend({
 
-  isLocked:     false     # Boolean
-  lastUpdateMs: undefined # Number
-  lastX:        undefined # Number
-  lastY:        undefined # Number
-  view:         undefined # Element
+  _isLocked:    false     # Boolean
+  _xAdjustment: undefined # Number
+  _yAdjustment: undefined # Number
 
   data: -> {
     isEnabled: false # Boolean
+  , isVisible: true  # Boolean
   , target:    null  # Ractive
   }
 
@@ -31,44 +30,53 @@ window.RactiveResizer = Ractive.extend({
   # () => Unit
   clearTarget: ->
     target = @get('target')
-    if not @isLocked and target?
+    if not @_isLocked and target?
       if not target.destroyed
-        target.find('.netlogo-widget').classList.remove('widget-selected')
+        target.set('isSelected', false)
       @set('target', null)
     return
 
-  # (Element) => Unit
+  # (Ractive) => Unit
   setTarget: (newTarget) ->
-    if not @isLocked
+    if not @_isLocked
       setTimeout((=> # Use `setTimeout`, so any pending `clearTarget` resolves first --JAB (12/6/17)
         @clearTarget()
         @set('target', newTarget)
-        newTarget.find('.netlogo-widget').classList.add('widget-selected')
+        newTarget.set('isSelected', true)
       ), 0)
     return
 
-  # (Element) => Unit
+  # (Ractive) => Unit
   lockTarget: (newTarget) ->
-    if not @isLocked and newTarget?
+    if not @_isLocked and newTarget?
       @setTarget(newTarget)
-      @isLocked = true
+      @_isLocked = true
     return
 
   # () => Unit
   unlockTarget: ->
-    @isLocked = false
+    @_isLocked = false
     return
 
   on: {
 
     'start-handle-drag': (event) ->
       CommonDrag.dragstart.call(this, event, (-> true), (x, y) =>
-        @lastX = x
-        @lastY = y
+        { x, y } = @find('.widget-resizer').getBoundingClientRect()
+        @_xAdjustment = x - @get('left')
+        @_yAdjustment = y - @get('top')
       )
 
     'drag-handle': (event) ->
+
       CommonDrag.drag.call(this, event, (x, y) =>
+
+        snapToGrid = (n) -> n - (n - (Math.round(n / 10) * 10))
+        isMac      = window.navigator.platform.startsWith('Mac')
+        isSnapping = ((not isMac and not event.original.ctrlKey) or (isMac and not event.original.metaKey))
+        [snappedX, snappedY] = if isSnapping then [x, y].map(snapToGrid) else [x, y]
+        xCoord               = snappedX - @_xAdjustment
+        yCoord               = snappedY - @_yAdjustment
 
         target    = @get('target')
         oldLeft   = target.get('left')
@@ -76,10 +84,10 @@ window.RactiveResizer = Ractive.extend({
         oldTop    = target.get('top')
         oldBottom = target.get('bottom')
 
-        left   = ['left'  , @lastX, x]
-        right  = ['right' , @lastX, x]
-        top    = ['top'   , @lastY, y]
-        bottom = ['bottom', @lastY, y]
+        left   = ['left'  , xCoord]
+        right  = ['right' , xCoord]
+        top    = ['top'   , yCoord]
+        bottom = ['bottom', yCoord]
 
         direction = event.original.target.dataset.direction
 
@@ -95,7 +103,8 @@ window.RactiveResizer = Ractive.extend({
             when "TopRight"   then [top, right]
             else throw new Error("What the heck resize direction is '#{direction}'?")
 
-        exceedsOpposite = (dir, value) =>
+        clamp = (dir, value) =>
+
           opposite =
             switch dir
               when 'left'   then 'right'
@@ -103,33 +112,37 @@ window.RactiveResizer = Ractive.extend({
               when 'top'    then 'bottom'
               when 'bottom' then 'top'
               else throw new Error("What the heck opposite direction is '#{dir}'?")
-          oppositeValue = @get(opposite)
-          ((opposite is 'left'  or opposite is 'top'   ) and newValue <= (oppositeValue + 26)) or
-          ((opposite is 'right' or opposite is 'bottom') and newValue >= (oppositeValue - 26))
 
-        findAdjustment = (n) -> n - (Math.round(n / 10) * 10)
 
-        for [dir, lastCor, currentCor] in adjusters
-          newValue   = target.get(dir) - (lastCor - currentCor)
-          adjustment = findAdjustment(newValue)
-          adjusted   = newValue - adjustment
-          if not exceedsOpposite(dir, adjusted)
-            target.set(dir, adjusted)
+          oppositeValue = target.get(opposite)
 
-        @lastX = x
-        @lastY = y
+          switch opposite
+            when 'left'   then Math.max(value, oppositeValue + target.minWidth )
+            when 'top'    then Math.max(value, oppositeValue + target.minHeight)
+            when 'right'  then Math.min(value, oppositeValue - target.minWidth )
+            when 'bottom' then Math.min(value, oppositeValue - target.minHeight)
+            else throw new Error("No, really, what the heck opposite direction is '#{opposite}'?")
 
-        @get('target').fire('widget-resized'
-                           , oldLeft           , oldRight           , oldTop           , oldBottom
-                           , target.get('left'), target.get('right'), target.get('top'), target.get('bottom')
-                           )
+        dirCoordPairs = adjusters.map(([dir, currentCor]) -> [dir, clamp(dir, currentCor)])
+
+        newChanges =
+          if dirCoordPairs.every(([dir, coord]) -> not (((dir is 'left') or (dir is 'top')) and (coord < 0)))
+            dirCoordPairs.reduce(((acc, [dir, coord]) -> acc[dir] = coord; acc), {})
+          else
+            {}
+
+        oldCoords = { left: oldLeft, top: oldTop, bottom: oldBottom, right: oldRight }
+        newCoords = Object.assign(oldCoords, newChanges)
+
+        @get('target').handleResize(newCoords)
 
       )
 
     'stop-handle-drag': ->
       CommonDrag.dragend.call(this, =>
-        @lastX = undefined
-        @lastY = undefined
+        @_xAdjustment = undefined
+        @_yAdjustment = undefined
+        @get('target').handleResizeEnd()
       )
 
   }
@@ -138,7 +151,7 @@ window.RactiveResizer = Ractive.extend({
   # coffeelint: disable=max_line_length
   template:
     """
-    {{# isEnabled && target !== null }}
+    {{# isEnabled && isVisible && target !== null }}
     <div class="widget-resizer" style="{{dims}}">
       {{ #target.get("resizeDirs").includes("bottom")      }}<div draggable="true" on-drag="drag-handle" on-dragstart="start-handle-drag" on-dragend="stop-handle-drag" class="widget-resize-handle" data-direction="Bottom"      style="cursor:  s-resize; bottom:          0; left:   {{midX}};"></div>{{/}}
       {{ #target.get("resizeDirs").includes("bottomLeft")  }}<div draggable="true" on-drag="drag-handle" on-dragstart="start-handle-drag" on-dragend="stop-handle-drag" class="widget-resize-handle" data-direction="BottomLeft"  style="cursor: sw-resize; bottom:          0; left:          0;"></div>{{/}}

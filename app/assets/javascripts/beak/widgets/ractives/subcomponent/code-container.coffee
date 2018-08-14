@@ -10,6 +10,7 @@ RactiveCodeContainerBase = Ractive.extend({
   , initialCode:    undefined # String
   , isDisabled:     false
   , injectedConfig: undefined # Object
+  , onchange:       (->)      # (String) => Unit
   , style:          undefined # String
   }
 
@@ -24,14 +25,23 @@ RactiveCodeContainerBase = Ractive.extend({
     initialCode = @get('initialCode')
     @set('code', initialCode ? @get('code') ? "")
     @_setupCodeMirror()
+    return
 
   twoway: false
 
   _setupCodeMirror: ->
-    baseConfig = { mode:  'netlogo', theme: 'netlogo-default', value: @get('code'), viewportMargin: Infinity }
+
+    baseConfig = { mode: 'netlogo', theme: 'netlogo-default', value: @get('code').toString(), viewportMargin: Infinity }
     config     = Object.assign({}, baseConfig, @get('extraConfig') ? {}, @get('injectedConfig') ? {})
     @_editor   = new CodeMirror(@find("##{@get('id')}"), config)
-    @_editor.on('change', => @set('code', @_editor.getValue()))
+
+    @_editor.on('change', =>
+      code = @_editor.getValue()
+      @set('code', code)
+      @parent.fire('code-changed', code)
+      @get('onchange')(code)
+    )
+
     @observe('isDisabled', (isDisabled) ->
       @_editor.setOption('readOnly', if isDisabled then 'nocursor' else false)
       classes = this.find('.netlogo-code').querySelector('.CodeMirror-scroll').classList
@@ -41,12 +51,14 @@ RactiveCodeContainerBase = Ractive.extend({
         classes.remove('cm-disabled')
       return
     )
+
     return
 
   # (String) => Unit
   setCode: (code) ->
-    if @_editor? and @_editor.getValue() isnt code
-      @_editor.setValue(code)
+    str = code.toString()
+    if @_editor? and @_editor.getValue() isnt str
+      @_editor.setValue(str)
     return
 
   template:
@@ -70,26 +82,48 @@ window.RactiveCodeContainerMultiline = RactiveCodeContainerBase.extend({
 
 })
 
-window.RactiveEditFormCodeContainer = Ractive.extend({
+window.RactiveCodeContainerOneLine = RactiveCodeContainerBase.extend({
 
-  data: -> {
-    config: undefined # Object
-  , id:     undefined # String
-  , label:  undefined # String
-  , style:  undefined # String
-  , value:  undefined # String
-  }
-
-  twoway: false
-
-  components: {
-    codeContainer: RactiveCodeContainerMultiline
-  }
-
-  template:
-    """
-    <label for="{{id}}">{{label}}</label>
-    <codeContainer id="{{id}}" initialCode="{{value}}" injectedConfig="{{config}}" style="{{style}}" />
-    """
+  oncomplete: ->
+    @._super()
+    forceOneLine =
+      (_, change) ->
+        oneLineText = change.text.join('').replace(/\n/g, '')
+        change.update(change.from, change.to, [oneLineText])
+        true
+    @_editor.on('beforeChange', forceOneLine)
+    return
 
 })
+
+# (Ractive) => Ractive
+editFormCodeContainerFactory =
+  (container) ->
+    Ractive.extend({
+
+      data: -> {
+        config:   undefined # Object
+      , id:       undefined # String
+      , label:    undefined # String
+      , onchange: (->)      # (String) => Unit
+      , style:    undefined # String
+      , value:    undefined # String
+      }
+
+      twoway: false
+
+      components: {
+        codeContainer: container
+      }
+
+      template:
+        """
+        <label for="{{id}}">{{label}}</label>
+        <codeContainer id="{{id}}" initialCode="{{value}}" injectedConfig="{{config}}"
+                       onchange="{{onchange}}" style="{{style}}" />
+        """
+
+    })
+
+window.RactiveEditFormOneLineCode   = editFormCodeContainerFactory(RactiveCodeContainerOneLine)
+window.RactiveEditFormMultilineCode = editFormCodeContainerFactory(RactiveCodeContainerMultiline)

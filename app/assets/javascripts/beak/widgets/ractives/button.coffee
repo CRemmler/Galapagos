@@ -12,15 +12,16 @@ ButtonEditForm = EditForm.extend({
   computed: { displayedType: { get: -> @_typeToDisplay(@get('type')) } }
 
   on: {
-    'handle-action-key-press': ({ node }) ->
-      node.value = ""
+    'handle-action-key-press': ({ event: { key }, node }) ->
+      if key isnt "Enter"
+        node.value = ""
   }
 
   twoway: false
 
   components: {
     formCheckbox: RactiveEditFormCheckbox
-  , formCode:     RactiveEditFormCodeContainer
+  , formCode:     RactiveEditFormMultilineCode
   , formDropdown: RactiveEditFormDropdown
   , labeledInput: RactiveEditFormLabeledInput
   , spacer:       RactiveEditFormSpacer
@@ -69,7 +70,7 @@ ButtonEditForm = EditForm.extend({
       <div class="flex-row" style="align-items: center;">
         <label for="{{id}}-action-key">Action key:</label>
         <input  id="{{id}}-action-key" name="actionKey" type="text" value="{{actionKey}}"
-                class="widget-edit-inputbox" style="text-transform: uppercase; width: 30px;"
+                class="widget-edit-inputbox" style="text-transform: uppercase; width: 33px;"
                 on-keypress="handle-action-key-press" />
       </div>
       """
@@ -113,14 +114,17 @@ window.RactiveButton = RactiveWidget.extend({
     ,     source: [@_weg.recompile]
     }
 
+  minWidth:  35
+  minHeight: 30
+
   # coffeelint: disable=max_line_length
   template:
     """
+    {{>editorOverlay}}
     {{>button}}
     <editForm actionKey="{{widget.actionKey}}" display="{{widget.display}}"
               idBasis="{{id}}" isForever="{{widget.forever}}" source="{{widget.source}}"
               startsDisabled="{{widget.disableUntilTicksStart}}" type="{{widget.buttonKind}}" />
-    {{>editorOverlay}}
     """
 
   partials: {
@@ -137,7 +141,7 @@ window.RactiveButton = RactiveWidget.extend({
     standardButton:
       """
       <button id="{{id}}" type="button" style="{{dims}}"
-              class="netlogo-widget netlogo-button netlogo-command{{# !isEnabled }} netlogo-disabled{{/}} {{errorClass}}{{#isEditing}} interface-unlocked{{/}}"
+              class="netlogo-widget netlogo-button netlogo-command{{# !isEnabled }} netlogo-disabled{{/}} {{errorClass}} {{classes}}"
               on-click="@this.fire('activate-button', @this.get('widget.run'))">
         {{>buttonContext}}
         {{>label}}
@@ -148,7 +152,7 @@ window.RactiveButton = RactiveWidget.extend({
     foreverButton:
       """
       <label id="{{id}}" style="{{dims}}"
-             class="netlogo-widget netlogo-button netlogo-forever-button{{#widget.running}} netlogo-active{{/}} netlogo-command{{# !isEnabled }} netlogo-disabled{{/}} {{errorClass}}{{#isEditing}} interface-unlocked{{/}}">
+             class="netlogo-widget netlogo-button netlogo-forever-button{{#widget.running}} netlogo-active{{/}} netlogo-command{{# !isEnabled }} netlogo-disabled{{/}} {{errorClass}} {{classes}}">
         {{>buttonContext}}
         {{>label}}
         {{>actionKeyIndicator}}

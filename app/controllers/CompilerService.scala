@@ -320,6 +320,7 @@ private[controllers] trait RequestResultGenerator {
 
     val assetURLs =
       Seq(
+        "keywords.js",
         "codemirror-mode.js",
         "colors.js",
         "default-shapes.js",
@@ -329,6 +330,7 @@ private[controllers] trait RequestResultGenerator {
         "new-model.js",
         "beak/widgets/ractives/subcomponent/checkbox.js",
         "beak/widgets/ractives/subcomponent/code-container.js",
+        "beak/widgets/ractives/subcomponent/color-input.js",
         "beak/widgets/ractives/subcomponent/dropdown.js",
         "beak/widgets/ractives/subcomponent/labeled-input.js",
         "beak/widgets/ractives/subcomponent/font-size.js",
@@ -362,6 +364,7 @@ private[controllers] trait RequestResultGenerator {
         "beak/widgets/event-traffic-control.js",
         "beak/widgets/handle-context-menu.js",
         "beak/widgets/handle-widget-selection.js",
+        "beak/widgets/help-dialog.js",
         "beak/widgets/initialize-ui.js",
         "beak/widgets/set-up-widgets.js",
         "beak/widgets/skeleton.js",

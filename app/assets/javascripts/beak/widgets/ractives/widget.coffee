@@ -6,6 +6,12 @@ WidgetEventGenerators = {
       type: "recompile"
     }
 
+  recompileLite: ->
+    {
+      run:  (ractive, widget) -> ractive.fire('recompile-lite')
+      type: "recompile-lite"
+    }
+
   redrawView: ->
     {
       run:  (ractive, widget) -> ractive.fire('redraw-view')
@@ -14,7 +20,9 @@ WidgetEventGenerators = {
 
   refreshChooser: ->
     {
-      run: (ractive, widget) -> ractive.fire('refresh-chooser', widget)
+      # For whatever reason, if Ractive finds second argument of `fire` to be an object (in this case, our `widget`),
+      # it merges that arg into the context and ruins everything. --JAB (4/8/18)
+      run: (ractive, widget) -> ractive.fire('refresh-chooser', "ignore", widget)
       type: "refreshChooser"
     }
 
@@ -24,10 +32,22 @@ WidgetEventGenerators = {
       type: "rename:#{oldName},#{newName}"
     }
 
+  resizePatches: ->
+    {
+      run:  (ractive, widget) -> ractive.fire('set-patch-size', widget.dimensions.patchSize)
+      type: "resizePatches"
+    }
+
   resizeView: ->
     {
       run:  (ractive, widget) -> ractive.fire('resize-view')
       type: "resizeView"
+    }
+
+  updateEngineValue: ->
+    {
+      run: (ractive, widget) -> world.observer.setGlobal(widget.variable, widget.currentValue)
+      type: "updateCurrentValue"
     }
 
   updateTopology: ->
@@ -45,6 +65,7 @@ window.RactiveWidget = RactiveDraggableAndContextable.extend({
   data: -> {
     id:         undefined # String
   , isEditing:  undefined # Boolean
+  , isSelected: undefined # Boolean
   , resizeDirs: ['left', 'right', 'top', 'bottom', 'topLeft', 'topRight', 'bottomLeft', 'bottomRight']
   , widget:     undefined # Widget
   }
@@ -54,6 +75,11 @@ window.RactiveWidget = RactiveDraggableAndContextable.extend({
   }
 
   computed: {
+    classes: ->
+      """
+      #{if @get('isEditing')  then 'interface-unlocked' else ''}
+      #{if @get('isSelected') then 'selected'           else ''}
+      """
     dims: ->
       """
       position: absolute;
@@ -61,6 +87,18 @@ window.RactiveWidget = RactiveDraggableAndContextable.extend({
       width: #{@get('right') - @get('left')}px; height: #{@get('bottom') - @get('top')}px;
       """
   }
+
+  # (Object[Number]) => Unit
+  handleResize: ({ left, right, top, bottom }) ->
+    @set('widget.left'  , left  )
+    @set('widget.right' , right )
+    @set('widget.top'   , top   )
+    @set('widget.bottom', bottom)
+    return
+
+  # () => Unit
+  handleResizeEnd: ->
+    return
 
   on: {
 
@@ -141,7 +179,7 @@ window.RactiveWidget = RactiveDraggableAndContextable.extend({
   partials: {
     editorOverlay: """
                    {{ #isEditing }}
-                     <div draggable="true" style="{{dims}} z-index: 50;"
+                     <div draggable="true" style="{{dims}}" class="editor-overlay{{#isSelected}} selected{{/}}"
                           on-click="@this.fire('hide-context-menu') && @this.fire('select-widget', @event)"
                           on-contextmenu="@this.fire('show-context-menu', @event)"
                           on-dblclick="@this.fire('edit-widget')"

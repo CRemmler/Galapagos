@@ -39,9 +39,9 @@ window.CommonDrag = {
       # When dragging stops, `client(X|Y)` tend to be very negative nonsense values
       # We only take non-negative values here, to avoid the widget disappearing --JAB (3/22/16, 10/29/17)
 
-      # Only update drag coords 30 times per second.  If we don't throttle,
+      # Only update drag coords 60 times per second.  If we don't throttle,
       # all of this `set`ing murders the CPU --JAB (10/29/17)
-      if @view is view and x > 0 and y > 0 and ((new Date).getTime() - @lastUpdateMs) >= (1000 / 30)
+      if @view is view and x > 0 and y > 0 and ((new Date).getTime() - @lastUpdateMs) >= (1000 / 60)
         @lastUpdateMs = (new Date).getTime()
         callback(x, y)
 
@@ -82,6 +82,14 @@ window.RactiveDraggableAndContextable = RactiveContextable.extend({
   , bottom:    undefined # Number
   }
 
+  nudge: (direction) ->
+    switch direction
+      when "up"    then @set('top' , @get('top' ) - 1); @set('bottom', @get('bottom') - 1)
+      when "down"  then @set('top' , @get('top' ) + 1); @set('bottom', @get('bottom') + 1)
+      when "left"  then @set('left', @get('left') - 1); @set('right' , @get('right' ) - 1)
+      when "right" then @set('left', @get('left') + 1); @set('right' , @get('right' ) + 1)
+      else              console.log("'#{direction}' is an impossible direction for nudging...")
+
   on: {
 
     'start-widget-drag': (event) ->
@@ -94,17 +102,33 @@ window.RactiveDraggableAndContextable = RactiveContextable.extend({
       )
 
     'drag-widget': (event) ->
+
+      isMac      = window.navigator.platform.startsWith('Mac')
+      isSnapping = ((not isMac and not event.original.ctrlKey) or (isMac and not event.original.metaKey))
+
       CommonDrag.drag.call(this, event, (x, y) =>
 
         findAdjustment = (n) -> n - (Math.round(n / 5) * 5)
 
-        xAdjust = findAdjustment(@startLeft + x)
-        yAdjust = findAdjustment(@startTop  + y)
+        xAdjust = if isSnapping then findAdjustment(@startLeft + x) else 0
+        yAdjust = if isSnapping then findAdjustment(@startTop  + y) else 0
 
-        @set(  'left', @startLeft   + x - xAdjust)
-        @set( 'right', @startRight  + x - xAdjust)
-        @set(   'top', @startTop    + y - yAdjust)
-        @set('bottom', @startBottom + y - yAdjust)
+        newLeft = @startLeft + x - xAdjust
+        newTop  = @startTop  + y - yAdjust
+
+        if newLeft < 0
+          @set( 'left', 0)
+          @set('right', @startRight - @startLeft)
+        else
+          @set( 'left', newLeft)
+          @set('right', @startRight + x - xAdjust)
+
+        if newTop < 0
+          @set(   'top', 0)
+          @set('bottom', @startBottom - @startTop)
+        else
+          @set(   'top', newTop)
+          @set('bottom', @startBottom + y - yAdjust)
 
       )
 

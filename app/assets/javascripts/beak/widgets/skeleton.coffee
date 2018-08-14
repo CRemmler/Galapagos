@@ -16,7 +16,10 @@ window.generateRactiveSkeleton = (container, widgets, code, info, isReadOnly, fi
   , height:             0
   , info
   , isEditing:          false
+  , isHelpVisible:      false
+  , isOverlayUp:        false
   , isReadOnly
+  , isResizerVisible:   true
   , isStale:            false
   , lastCompiledCode:   code
   , lastCompileFailed:  false
@@ -25,6 +28,8 @@ window.generateRactiveSkeleton = (container, widgets, code, info, isReadOnly, fi
   , modelTitle:         dropNLogoExtension(filename)
   , outputWidgetOutput: ''
   , primaryView:        undefined
+  , someDialogIsOpen:   false
+  , someEditFormIsOpen: false
   , speed:              0.0
   , ticks:              "" # Remember, ticks initialize to nothing, not 0
   , ticksStarted:       false
@@ -52,15 +57,18 @@ window.generateRactiveSkeleton = (container, widgets, code, info, isReadOnly, fi
   Ractive.transitions.shrink = animateWithClass('shrinking')
 
   new Ractive({
-    el:         container,
-    template:   template,
-    partials:   partials,
+
+    el:       container,
+    template: template,
+    partials: partials,
+
     components: {
 
       console:       RactiveConsoleWidget
     , contextMenu:   RactiveContextMenu
     , editableTitle: RactiveModelTitle
     , codePane:      RactiveModelCodeComponent
+    , helpDialog:    RactiveHelpDialog
     , infotab:       RactiveInfoTabWidget
     , resizer:       RactiveResizer
 
@@ -77,7 +85,21 @@ window.generateRactiveSkeleton = (container, widgets, code, info, isReadOnly, fi
     , plotWidget:    RactivePlot
     , viewWidget:    RactiveView
 
+    , spacer:        RactiveEditFormSpacer
+
     },
+
+    computed: {
+      stateName: ->
+        if @get('isEditing')
+          if @get('someEditFormIsOpen')
+            'authoring - editing widget'
+          else
+            'authoring - plain'
+        else
+          'interactive'
+    },
+
     data: -> model
   })
 
@@ -88,6 +110,7 @@ template =
        tabindex="1" on-keydown="@this.fire('check-action-keys', @event)"
        on-focus="@this.fire('track-focus', @node)"
        on-blur="@this.fire('track-focus', @node)">
+    <div id="modal-overlay" class="modal-overlay" style="{{# !isOverlayUp }}display: none;{{/}}" on-click="drop-overlay"></div>
     <div class="netlogo-header">
       <div class="netlogo-subheader">
         <div class="netlogo-powered-by">
@@ -117,8 +140,13 @@ template =
       {{/}}
     </div>
 
-    <div class="netlogo-interface-unlocker" style="display: none" class="{{#isEditing}}interface-unlocked{{/}}" on-click="toggle-interface-lock"></div>
+    <div class="netlogo-interface-unlocker-container{{#!someDialogIsOpen}} enabled{{/}}" on-click="toggle-interface-lock">
+      <div class="netlogo-interface-unlocker {{#isEditing}}interface-unlocked{{/}}"></div>
+      <spacer width="5px" />
+      <span class="netlogo-interface-mode-text">Mode: {{#isEditing}}Authoring{{else}}Interactive{{/}}</span>
+    </div>
 
+    <helpDialog isOverlayUp="{{isOverlayUp}}" isVisible="{{isHelpVisible}}" stateName="{{stateName}}" wareaHeight="{{height}}" wareaWidth="{{width}}"></helpDialog>
     <contextMenu></contextMenu>
 
     <label class="netlogo-speed-slider{{#isEditing}} interface-unlocked{{/}}">
@@ -129,10 +157,10 @@ template =
     </label>
 
     <div style="position: relative; width: {{width}}px; height: {{height}}px"
-         class="netlogo-widget-container"
+         class="netlogo-widget-container{{#isEditing}} interface-unlocked{{/}}"
          on-contextmenu="@this.fire('show-context-menu', { component: @this }, @event)"
          on-click="@this.fire('deselect-widgets', @event)" on-dragover="hail-satan">
-      <resizer isEnabled="{{isEditing}}" />
+      <resizer isEnabled="{{isEditing}}" isVisible="{{isResizerVisible}}" />
       {{#widgetObj:key}}
         {{# type === 'view'     }} <viewWidget    id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} ticks="{{ticks}}" /> {{/}}
         {{# type === 'textBox'  }} <labelWidget   id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} /> {{/}}

@@ -2,8 +2,7 @@ class window.ViewController
   constructor: (@container, fontSize) ->
     @view = new View(fontSize)
     @turtleDrawer = new TurtleDrawer(@view)
-    @imageLayer = new ImageLayer(@view)
-    @drawingLayer = new DrawingLayer(@view, @turtleDrawer)
+    @drawingLayer = new DrawingLayer(@view, @turtleDrawer, () => @repaint())
     @patchDrawer = new PatchDrawer(@view)
     @spotlightDrawer = new SpotlightDrawer(@view)
     @container.appendChild(@view.visibleCanvas)
@@ -77,7 +76,6 @@ class window.ViewController
   repaint: ->
     @view.transformToWorld(@model.world)
     @patchDrawer.repaint(@model)
-    @imageLayer.repaint()
     @drawingLayer.repaint(@model)
     @turtleDrawer.repaint(@model)
     @spotlightDrawer.repaint(@model)
@@ -306,20 +304,6 @@ Possible drawing events:
 
 { type: "reset-zoom" }
 ###
-
-class ImageLayer extends Drawer
-  constructor: (@view) ->
-    @canvas    = document.createElement('canvas')
-    @canvas.id = 'ilayer'
-    @ctx       = @canvas.getContext('2d')
-
-  repaint: () ->
-    
-    img = document.getElementById("imageLayer");
-    if img != null
-      return @view.ctx.drawImage(img, 0, 0, 858, 858);
-    else
-      return @view.ctx.drawImage(@canvas, 0, 0);
 
 class DrawingLayer extends Drawer
   constructor: (@view, @turtleDrawer, @repaintView) ->

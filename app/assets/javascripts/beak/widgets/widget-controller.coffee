@@ -32,7 +32,7 @@ class window.WidgetController
   # () => Unit
   runForevers: ->
     for widget in @widgets()
-      if widget.type == 'button' and widget.forever and widget.running
+      if widget.type is 'button' and widget.forever and widget.running
         widget.run()
     return
 
@@ -121,7 +121,7 @@ class window.WidgetController
   # (String) => Unit
   setCode: (code) ->
     @ractive.set('code', code)
-    @ractive.findComponent('editor').setCode(code)
+    @ractive.findComponent('codePane').setCode(code)
     @ractive.fire('controller.recompile')
     return
 
@@ -149,11 +149,12 @@ updateWidget = (widget) ->
       else if widget.reporter?
         try
           value = widget.reporter()
-          isntValidValue = not (value? and ((typeof(value) isnt "number") or isFinite(value)))
+          isNum = (typeof(value) is "number")
+          isntValidValue = not (value? and (not isNum or isFinite(value)))
           if isntValidValue
             'N/A'
           else
-            if widget.precision?
+            if widget.precision? and isNum
               NLMath.precision(value, widget.precision)
             else
               value
@@ -178,7 +179,7 @@ updateWidget = (widget) ->
       maxValue  = widget.getMax()
       stepValue = widget.getStep()
       minValue  = widget.getMin()
-      if widget.maxValue != maxValue or widget.stepValue != stepValue or widget.minValue != minValue
+      if widget.maxValue isnt maxValue or widget.stepValue isnt stepValue or widget.minValue isnt minValue
         widget.maxValue  = maxValue
         widget.stepValue = stepValue
         widget.minValue  = minValue - 0.000001

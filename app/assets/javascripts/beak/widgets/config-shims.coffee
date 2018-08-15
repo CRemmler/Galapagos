@@ -35,6 +35,23 @@ genImportExportConfig = (ractive, viewController) ->
       anchor.click()
       return
 
+    importDrawing: (trueImport) -> (path) ->
+
+      listener =
+        (event) ->
+          reader = new FileReader
+          reader.onload = (e) -> trueImport(e.target.result)
+          if event.target.files.length > 0
+            reader.readAsDataURL(event.target.files[0])
+          elem.removeEventListener('change', listener)
+
+      elem = ractive.find('#import-drawing-input')
+      elem.addEventListener('change', listener)
+      elem.click()
+      elem.value = ""
+
+      return
+
     importWorld: (trueImport) -> ->
 
       listener =
@@ -53,6 +70,13 @@ genImportExportConfig = (ractive, viewController) ->
       return
 
   }
+
+# () => InspectionConfig
+genInspectionConfig = ->
+  inspect        = ((agent) -> window.alert("Agent inspection is not yet implemented"))
+  stopInspecting = ((agent) ->)
+  clearDead      = (->)
+  { inspect, stopInspecting, clearDead }
 
 # (ViewController) => MouseConfig
 genMouseConfig = (viewController) ->
@@ -106,6 +130,7 @@ window.genConfigs = (ractive, viewController, container) ->
   {
     dialog:       genDialogConfig(viewController)
   , importExport: genImportExportConfig(ractive, viewController)
+  , inspection:   genInspectionConfig()
   , mouse:        genMouseConfig(viewController)
   , output:       genOutputConfig(ractive, appendToConsole)
   , print:        { write: appendToConsole }

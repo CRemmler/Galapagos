@@ -35,8 +35,8 @@ handleAjaxLoad = (url, onSuccess, onFailure) =>
   req = new XMLHttpRequest()
   req.open('GET', url)
   req.onreadystatechange = () ->
-    if req.readyState == req.DONE
-      if (req.status == 0 || req.status >= 400)
+    if req.readyState is req.DONE
+      if (req.status is 0 or req.status >= 400)
         onFailure(req)
       else
         onSuccess(req.responseText)
@@ -86,7 +86,7 @@ reportCompilerError = (load) -> (res) ->
       contains = (s, x) -> s.indexOf(x) > -1
       message = err.message
       if contains(message, "Couldn't find corresponding reader") or contains(message, "Models must have 12 sections")
-        "#{message} (see <a href='https://netlogoweb.org/info#model-format-error'>here</a> for more information)"
+        "#{message} (see <a href='https://netlogoweb.org/docs/faq#model-format-error'>here</a> for more information)"
       else
         message
   ).join('<br/>')
@@ -150,7 +150,7 @@ fromNlogoWithoutCode = (nlogo, compiler, onSuccess) ->
   else
     newNlogo = nlogo.substring(first)
     result = compiler.fromNlogo(newNlogo, [])
-    if !result.model.success
+    if not result.model.success
       false
     else
       # It mutates state, but it's an easy way to get the code re-added

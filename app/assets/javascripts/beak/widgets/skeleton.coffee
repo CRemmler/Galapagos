@@ -130,10 +130,11 @@ template =
           <div class="netlogo-export-wrapper" style="display: block;">
             <span style="margin-right: 4px;">Export:</span> 
             <button class="netlogo-ugly-button" on-click="export-nlogo"{{#isEditing}} disabled{{/}}>NetLogo</button>
-            <form action="exportGbccWorld" method="post" enctype="multipart/form-data" style="display: inline-block">
+            <button class="netlogo-ugly-button" on-click="export-html"{{#isEditing}} disabled{{/}}>HTML</button>
+            <form action="exportGbccReport" method="post" enctype="multipart/form-data" style="display: inline-block">
               <input type="text" name="roomname" class="roomNameInput" style="display:none" value=""> 
               <input type="text" name="schoolname" class="schoolNameInput" style="display:none" value=""> 
-              <button class="netlogo-ugly-button" type="submit">World</button>
+              <button class="netlogo-ugly-button" type="submit">Report</button>
             </form>
           </div>
         </div>

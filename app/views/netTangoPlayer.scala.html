@@ -6,8 +6,6 @@
     <base target="_parent" />
     @tagBuilder.pathToHTML("lib/codemirror/lib/codemirror.css")
     @tagBuilder.pathToHTML("lib/codemirror/addon/dialog/dialog.css")
-    @tagBuilder.pathToHTML("lib/codemirror/addon/hint/show-hint.css")
-    @tagBuilder.pathToHTML("lib/chosen/chosen.css")
     @tagBuilder.pathToHTML("stylesheets/classes.css")
     @tagBuilder.pathToHTML("stylesheets/widgets.css")
     @tagBuilder.pathToHTML("stylesheets/ui-editor.css")
@@ -15,14 +13,22 @@
     @tagBuilder.pathToHTML("stylesheets/netlogo-syntax.css")
     @tagBuilder.pathToHTML("stylesheets/spinner.css")
     @tagBuilder.pathToHTML("stylesheets/alert.css")
+    @tagBuilder.pathToHTML("stylesheets/ntango.css")
+    @tagBuilder.pathToHTML("stylesheets/nettangobuilder.css")
   </head>
   <body style="margin: 0px;">
-    <script>window.exports = {};</script>
     @views.html.spinner()
     @views.html.errorAlert()
-    <div id="netlogo-model-container" style="display: inline-block;"></div>
+    <div style="position: relative;">
+      <div id="netlogo-model-container" style="display: flex;">
+      </div>
+      <div id="model-recompile-overlay">
+        <button class="ntb-button" onclick="window.recompile('ntb-recompile');">Recompile</button>
+      </div>
+      </div>
+    <div id="nettango-options" class="model-box ntb-container">
+    </div>
     @tagBuilder.pathToHTML("lib/jquery/jquery.js")
-    @tagBuilder.pathToHTML("lib/chosen/chosen.jquery.js")
     @tagBuilder.pathToHTML("lib/filesaver/FileSaver.js")
     @tagBuilder.pathToHTML("lib/google-caja/html-sanitizer-minified.js")
     @tagBuilder.pathToHTML("lib/markdown-js/markdown.js")
@@ -32,12 +38,10 @@
     @tagBuilder.pathToHTML("lib/highcharts/modules/export-data.js")
     @tagBuilder.pathToHTML("lib/ractive/ractive.js")
     @tagBuilder.pathToHTML("lib/codemirror/lib/codemirror.js")
-    @tagBuilder.pathToHTML("lib/codemirror/addon/comment/comment.js")
     @tagBuilder.pathToHTML("lib/codemirror/addon/dialog/dialog.js")
     @tagBuilder.pathToHTML("lib/codemirror/addon/mode/simple.js")
     @tagBuilder.pathToHTML("lib/codemirror/addon/search/searchcursor.js")
     @tagBuilder.pathToHTML("lib/codemirror/addon/search/search.js")
-    @tagBuilder.pathToHTML("lib/codemirror/addon/hint/show-hint.js")
 
     @tagBuilder.callToHTML(routes.CompilerService.tortoiseCompilerJs, "tortoise-compiler.js")
     @tagBuilder.callToHTML(routes.Local.engine,                       "tortoise-engine.js")
@@ -48,8 +52,8 @@
     @tagBuilder.pathToHTML("javascripts/default-shapes.js")
     @tagBuilder.pathToHTML("javascripts/global-noisy-things.js")
     @tagBuilder.pathToHTML("javascripts/highcharts.js")
-    @tagBuilder.pathToHTML("javascripts/models.js")
     @tagBuilder.pathToHTML("javascripts/new-model.js")
+    @tagBuilder.pathToHTML("javascripts/models.js")
     @tagBuilder.pathToHTML("javascripts/beak/widgets/ractives/subcomponent/checkbox.js")
     @tagBuilder.pathToHTML("javascripts/beak/widgets/ractives/subcomponent/code-container.js")
     @tagBuilder.pathToHTML("javascripts/beak/widgets/ractives/subcomponent/color-input.js")
@@ -95,12 +99,25 @@
     @tagBuilder.pathToHTML("javascripts/beak/session-lite.js")
     @tagBuilder.pathToHTML("javascripts/beak/tortoise.js")
 
+    @tagBuilder.pathToHTML("ntango.js")
+    @tagBuilder.pathToHTML("javascripts/nettango/error-display.js")
+    @tagBuilder.pathToHTML("javascripts/nettango/popup-menu.js")
+    @tagBuilder.pathToHTML("javascripts/nettango/nettango-block-defaults.js")
+    @tagBuilder.pathToHTML("javascripts/nettango/nettango-attribute.js")
+    @tagBuilder.pathToHTML("javascripts/nettango/nettango-block-form.js")
+    @tagBuilder.pathToHTML("javascripts/nettango/nettango-space.js")
+    @tagBuilder.pathToHTML("javascripts/nettango/nettango-spaces.js")
+    @tagBuilder.pathToHTML("javascripts/nettango/nettango-builder.js")
+    @tagBuilder.pathToHTML("javascripts/nettango/nettango-storage.js")
+    @tagBuilder.pathToHTML("javascripts/nettango/nettango-controller.js")
+
     @helper.javascriptRouter("jsRoutes")(
       routes.javascript.Local.standalone
     )
 
     <!-- This can be used to insert NetLogo code into this page -->
     <script type="text/nlogo" id="nlogo-code" data-filename="model.nlogo"></script>
+    <script type="text/json" id="ntango-code"></script>
 
     <script>
 
@@ -212,6 +229,63 @@
           }
         }, 200);
       }
+
+      window.modelContainer = modelContainer
+      var ntangoCode        = document.getElementById('ntango-code')
+
+      window.addEventListener("message", function(e) {
+        if (e.data.type === "nlw-resize") {
+          var isValid = function(x) { return (typeof x !== "undefined" && x !== null); };
+
+          var height = e.data.height;
+          var width  = e.data.width;
+          var title  = e.data.title;
+
+          // Quack, quack!
+          // Who doesn't love duck typing? --JAB (11/9/15)
+          if ([height, width, title].every(isValid)) {
+            modelContainer.width  = width;
+            modelContainer.height = height;
+            // document.title        = title;
+          }
+        }
+      });
+
+      function setModelCode(code) {
+        window.postMessage({
+          nlogo: code,
+          path: "Testing",
+          type: "nlw-load-model"
+        }, "*")
+      }
+
+      var overlay = document.getElementById('model-recompile-overlay')
+      var theOutsideWorld = {
+          setModelCode:        setModelCode
+        , getModelCode:        ()                => window.session.getNlogo()
+        , getElementById:      (id)              => document.getElementById(id)
+        , createElement:       (elementType)     => document.createElement(elementType)
+        , appendElement:       (element)         => document.body.appendChild(element)
+        , addEventListener:    (event, callback) => document.addEventListener(event, callback)
+        , getWidgetController: ()                => window.session.widgetController
+        , getModelTitle:       ()                => window.session.modelTitle()
+        , saveAs:              window.saveAs
+      }
+
+      var ls
+      try {
+        ls = window.localStorage
+      } catch (exception) {
+        ls = NetTangoStorage.fakeStorage()
+      }
+
+      var netTango = new NetTangoController('nettango-options', ls, overlay, true, theOutsideWorld)
+
+      exports.toHTML   = markdown.toHTML // This should not be necessary, but `exports` doesn't exist when we import `markdown-js`
+      window.ractive   = netTango.ractive
+      window.recompile = netTango.recompile
+      window.onload    = netTango.onModelLoad
+
     </script>
   </body>
 </html>

@@ -4,7 +4,7 @@ name := "Galapagos"
 
 version := "1.0-SNAPSHOT"
 
-scalaVersion := "2.12.4"
+scalaVersion := "2.12.6"
 
 scalacOptions ++= Seq(
   "-encoding", "UTF-8",
@@ -22,7 +22,7 @@ scalacOptions ++= Seq(
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, org.nlogo.PlayScrapePlugin)
 
-val tortoiseVersion = "1.0-4c0081c-dirty"
+val tortoiseVersion = "1.0-83cd2f1"
 
 libraryDependencies ++= Seq(
   ehcache,
@@ -31,20 +31,20 @@ libraryDependencies ++= Seq(
   "org.nlogo" % "compilerjvm" % tortoiseVersion,
   "org.nlogo" % "netlogowebjs" % tortoiseVersion,
   "com.typesafe.play" %% "play-iteratees" % "2.6.1",
-  "com.typesafe.akka" %% "akka-testkit" % "2.5.11" % "test",
+  "com.typesafe.akka" %% "akka-testkit" % "2.5.15" % "test",
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % "test"
 )
 
 libraryDependencies ++= Seq(
-  "org.webjars" % "chosen" % "1.7.0",
+  "org.webjars" % "chosen" % "1.8.7",
   "org.webjars.bower" % "filesaver" % "1.3.3",
   "org.webjars.npm" % "mousetrap" % "1.6.1",
   "org.webjars.bower" % "google-caja" % "6005.0.0",
-  "org.webjars" % "highcharts" % "6.0.4",
-  "org.webjars" % "jquery" % "3.2.1",
+  "org.webjars" % "highcharts" % "6.1.1",
+  "org.webjars" % "jquery" % "3.3.1",
   "org.webjars" % "markdown-js" % "0.5.0-1",
-  "org.webjars.npm" % "ractive" % "0.9.3",
-  "org.webjars" % "codemirror" % "5.33.0"
+  "org.webjars.npm" % "ractive" % "0.9.9",
+  "org.webjars.npm" % "codemirror" % "5.39.2"
 )
 
 resolvers += Resolver.bintrayRepo("netlogo", "TortoiseAux")
@@ -75,6 +75,8 @@ scrapeRoutes ++= Seq(
   "/robots.txt",
   "/standalone",
   "/launch",
+  "/ntango-build",
+  "/ntango-play",
   "/web"
   )
 
@@ -98,30 +100,30 @@ scrapePublishCredential := (Def.settingDyn {
 
 scrapePublishBucketID := (Def.settingDyn {
   val branchDeploy = Map(
-    "master"  -> "netlogo-web-prod-content",
-    "staging" -> "netlogo-web-staging-content"
+    "production" -> "netlogo-web-prod-content",
+    "master"     -> "netlogo-web-staging-content"
   )
 
   if (isJenkins)
     Def.setting { branchDeploy.get(jenkinsBranch) }
   else
-    Def.setting { branchDeploy.get("master") }
+    Def.setting { branchDeploy.get("production") }
 }).value
 
 scrapePublishDistributionID := (Def.settingDyn {
   val branchPublish = Map(
-    "master"  -> "E3AIHWIXSMPCAI",
-    "staging" -> "E360I3EFLPUZR0"
+    "production" -> "E3AIHWIXSMPCAI",
+    "master"     -> "E360I3EFLPUZR0"
   )
 
   if (isJenkins)
     Def.setting { branchPublish.get(jenkinsBranch) }
   else
-    Def.setting { branchPublish.get("master") }
+    Def.setting { branchPublish.get("production") }
 }).value
 
 scrapeAbsoluteURL := (Def.settingDyn {
-  if (isJenkins && jenkinsBranch == "staging")
+  if (isJenkins && jenkinsBranch == "master")
     Def.setting { Some("staging.netlogoweb.org") }
   else
     Def.setting { Some("netlogoweb.org") }

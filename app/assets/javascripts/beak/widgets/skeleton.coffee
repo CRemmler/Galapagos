@@ -21,6 +21,7 @@ window.generateRactiveSkeleton = (container, widgets, code, info, isReadOnly, fi
   , isReadOnly
   , isResizerVisible:   true
   , isStale:            false
+  , isVertical:         true
   , lastCompiledCode:   code
   , lastCompileFailed:  false
   , lastDragX:          undefined
@@ -106,11 +107,12 @@ window.generateRactiveSkeleton = (container, widgets, code, info, isReadOnly, fi
 # coffeelint: disable=max_line_length
 template =
   """
-  <div class="netlogo-model" style="min-width: {{width}}px;"
+  <div class="netlogo-model netlogo-display-{{# isVertical }}vertical{{ else }}horizontal{{/}}" style="min-width: {{width}}px;"
        tabindex="1" on-keydown="@this.fire('check-action-keys', @event)"
        on-focus="@this.fire('track-focus', @node)"
        on-blur="@this.fire('track-focus', @node)">
     <div id="modal-overlay" class="modal-overlay" style="{{# !isOverlayUp }}display: none;{{/}}" on-click="drop-overlay"></div>
+    <div class="netlogo-display-vertical">
     <div class="netlogo-header">
       <div class="netlogo-subheader">
         <div class="netlogo-powered-by">
@@ -141,42 +143,54 @@ template =
       {{/}}
     </div>
 
-    <div class="netlogo-interface-unlocker-container{{#!someDialogIsOpen}} enabled{{/}}" on-click="toggle-interface-lock">
-      <div class="netlogo-interface-unlocker {{#isEditing}}interface-unlocked{{/}}"></div>
-      <spacer width="5px" />
-      <span class="netlogo-interface-mode-text">Mode: {{#isEditing}}Authoring{{else}}Interactive{{/}}</span>
+      <div class="netlogo-display-horizontal">
+
+        <div class="netlogo-toggle-container{{#!someDialogIsOpen}} enabled{{/}}" on-click="toggle-interface-lock">
+          <div class="netlogo-interface-unlocker {{#isEditing}}interface-unlocked{{/}}"></div>
+          <spacer width="5px" />
+          <span class="netlogo-toggle-text">Mode: {{#isEditing}}Authoring{{else}}Interactive{{/}}</span>
+        </div>
+
+        <div class="netlogo-toggle-container{{#!someDialogIsOpen}} enabled{{/}}" on-click="toggle-orientation">
+          <div class="netlogo-model-orientation {{#isVertical}}vertical-display{{/}}"></div>
+          <spacer width="5px" />
+          <span class="netlogo-toggle-text">Commands and Code: {{#isVertical}}Bottom{{else}}Right Side{{/}}</span>
+        </div>
+
+      </div>
+
+      <helpDialog isOverlayUp="{{isOverlayUp}}" isVisible="{{isHelpVisible}}" stateName="{{stateName}}" wareaHeight="{{height}}" wareaWidth="{{width}}"></helpDialog>
+      <contextMenu></contextMenu>
+
+      <label class="netlogo-speed-slider{{#isEditing}} interface-unlocked{{/}}">
+        <span class="netlogo-label">model speed</span>
+        <input type="range" min=-1 max=1 step=0.01 value="{{speed}}"{{#isEditing}} disabled{{/}} />
+        <tickCounter isVisible="{{primaryView.showTickCounter}}"
+                     label="{{primaryView.tickCounterLabel}}" value="{{ticks}}" />
+      </label>
+
+      <div style="position: relative; width: {{width}}px; height: {{height}}px"
+           class="netlogo-widget-container{{#isEditing}} interface-unlocked{{/}}"
+           on-contextmenu="@this.fire('show-context-menu', { component: @this }, @event)"
+           on-click="@this.fire('deselect-widgets', @event)" on-dragover="hail-satan">
+        <resizer isEnabled="{{isEditing}}" isVisible="{{isResizerVisible}}" />
+        {{#widgetObj:key}}
+          {{# type === 'view'     }} <viewWidget    id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} ticks="{{ticks}}" /> {{/}}
+          {{# type === 'textBox'  }} <labelWidget   id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} /> {{/}}
+          {{# type === 'switch'   }} <switchWidget  id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} /> {{/}}
+          {{# type === 'button'   }} <buttonWidget  id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} errorClass="{{>errorClass}}" ticksStarted="{{ticksStarted}}"/> {{/}}
+          {{# type === 'slider'   }} <sliderWidget  id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} errorClass="{{>errorClass}}" /> {{/}}
+          {{# type === 'chooser'  }} <chooserWidget id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} /> {{/}}
+          {{# type === 'monitor'  }} <monitorWidget id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} errorClass="{{>errorClass}}" /> {{/}}
+          {{# type === 'inputBox' }} <inputWidget   id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} /> {{/}}
+          {{# type === 'plot'     }} <plotWidget    id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} /> {{/}}
+          {{# type === 'output'   }} <outputWidget  id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} text="{{outputWidgetOutput}}" /> {{/}}
+        {{/}}
+      </div>
+
     </div>
 
-    <helpDialog isOverlayUp="{{isOverlayUp}}" isVisible="{{isHelpVisible}}" stateName="{{stateName}}" wareaHeight="{{height}}" wareaWidth="{{width}}"></helpDialog>
-    <contextMenu></contextMenu>
-
-    <label class="netlogo-speed-slider{{#isEditing}} interface-unlocked{{/}}">
-      <span class="netlogo-label">model speed</span>
-      <input type="range" min=-1 max=1 step=0.01 value="{{speed}}"{{#isEditing}} disabled{{/}} />
-      <tickCounter isVisible="{{primaryView.showTickCounter}}"
-                   label="{{primaryView.tickCounterLabel}}" value="{{ticks}}" />
-    </label>
-
-    <div style="position: relative; width: {{width}}px; height: {{height}}px"
-         class="netlogo-widget-container{{#isEditing}} interface-unlocked{{/}}"
-         on-contextmenu="@this.fire('show-context-menu', { component: @this }, @event)"
-         on-click="@this.fire('deselect-widgets', @event)" on-dragover="hail-satan">
-      <resizer isEnabled="{{isEditing}}" isVisible="{{isResizerVisible}}" />
-      {{#widgetObj:key}}
-        {{# type === 'view'     }} <viewWidget    id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} ticks="{{ticks}}" /> {{/}}
-        {{# type === 'textBox'  }} <labelWidget   id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} /> {{/}}
-        {{# type === 'switch'   }} <switchWidget  id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} /> {{/}}
-        {{# type === 'button'   }} <buttonWidget  id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} errorClass="{{>errorClass}}" ticksStarted="{{ticksStarted}}"/> {{/}}
-        {{# type === 'slider'   }} <sliderWidget  id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} errorClass="{{>errorClass}}" /> {{/}}
-        {{# type === 'chooser'  }} <chooserWidget id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} /> {{/}}
-        {{# type === 'monitor'  }} <monitorWidget id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} errorClass="{{>errorClass}}" /> {{/}}
-        {{# type === 'inputBox' }} <inputWidget   id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} /> {{/}}
-        {{# type === 'plot'     }} <plotWidget    id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} /> {{/}}
-        {{# type === 'output'   }} <outputWidget  id="{{>widgetID}}" isEditing="{{isEditing}}" left="{{left}}" right="{{right}}" top="{{top}}" bottom="{{bottom}}" widget={{this}} text="{{outputWidgetOutput}}" /> {{/}}
-      {{/}}
-    </div>
-
-    <div class="netlogo-tab-area" style="max-width: {{Math.max(width, 500)}}px">
+    <div class="netlogo-tab-area" style="min-width: {{Math.min(width, 500)}}px; max-width: {{Math.max(width, 500)}}px">
       {{# !isReadOnly }}
       <label class="netlogo-tab{{#showConsole}} netlogo-active{{/}}">
         <input id="console-toggle" type="checkbox" checked="{{showConsole}}" />

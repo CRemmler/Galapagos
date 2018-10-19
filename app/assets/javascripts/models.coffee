@@ -1,4 +1,6 @@
-exports.bindModelChooser = (container, onComplete, selectionChanged, currentMode) ->
+window.exports = window.exports ? {}
+
+window.exports.bindModelChooser = (container, onComplete, selectionChanged, currentMode) ->
 
   PUBLIC_PATH_SEGMENT_LENGTH = "public/".length
 
@@ -43,13 +45,13 @@ exports.bindModelChooser = (container, onComplete, selectionChanged, currentMode
     select.chosen({search_contains: true})
     select
 
-  $.ajax('/model/list.json', {
+  $.ajax('./model/list.json', {
     complete: (req, status) ->
       allModelNames = JSON.parse(req.responseText)
       window.modelSelect = createModelSelection(container, allModelNames)
 
       if container.classList.contains('tortoise-model-list')
-        $.ajax('/model/statuses.json', {
+        $.ajax('./model/statuses.json', {
           complete: (req, status) ->
             allModelStatuses = JSON.parse(req.responseText)
             for modelName in allModelNames
@@ -88,7 +90,7 @@ exports.selectModelByURL = (modelURL) ->
     truePath     = "#{truePrefix}#{modelName}".replace(/%20/g, " ")
     choiceElems  = document.getElementsByName('models')[0].children
     choicesArray = [].slice.call(choiceElems)
-    choiceElem   = choicesArray.reduce(((acc, x) -> if x.innerHTML is truePath then x else acc), null)
+    choiceElem   = choicesArray.reduce(((acc, x) -> if x.innerText is truePath then x else acc), null)
 
     if choiceElem?
       exports.selectModel(modelPath)

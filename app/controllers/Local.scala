@@ -7,7 +7,7 @@ import
 
 import
   play.api.{ Configuration, Environment, mvc },
-    mvc.{ AbstractController, Action, AnyContent, ControllerComponents }
+    mvc.{ AbstractController, Action, AnyContent, ControllerComponents, Request }
 
 class Local @Inject() ( components: ControllerComponents
                       , configuration: Configuration
@@ -22,6 +22,16 @@ class Local @Inject() ( components: ControllerComponents
   def launch: Action[AnyContent] = Action {
     implicit request =>
       Ok(views.html.tortoise())
+  }
+
+  def ntangoBuild: Action[AnyContent] = Action {
+    implicit request =>
+      Ok(views.html.netTangoBuilder(OutsourceTagBuilder))
+  }
+
+  def ntangoPlay: Action[AnyContent] = Action {
+    implicit request =>
+      Ok(views.html.netTangoPlayer(InlineTagBuilder))
   }
 
   def standalone: Action[AnyContent] = Action {

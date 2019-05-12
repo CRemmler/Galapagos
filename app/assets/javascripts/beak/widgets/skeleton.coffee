@@ -136,7 +136,7 @@ template =
             <form action="exportGbccReport" method="post" enctype="multipart/form-data" style="display: inline-block">
               <input type="text" name="roomname" class="roomNameInput" style="display:none" value=""> 
               <input type="text" name="schoolname" class="schoolNameInput" style="display:none" value=""> 
-              <button class="netlogo-ugly-button" type="submit">Report</button>
+              <button class="netlogo-ugly-button" type="submit">Data</button>
             </form>
           </div>
         </div>

@@ -306,10 +306,14 @@ Possible drawing events:
 ###
 
 class DrawingLayer extends Drawer
-  constructor: (@view, @turtleDrawer, @repaintView) ->
-    @canvas    = document.createElement('canvas')
-    @canvas.id = 'dlayer'
-    @ctx       = @canvas.getContext('2d')
+  constructor: (view, turtleDrawer, repaintView) ->
+    super()
+    @view         = view
+    @turtleDrawer = turtleDrawer
+    @repaintView  = repaintView
+    @canvas       = document.createElement('canvas')
+    @canvas.id    = 'dlayer'
+    @ctx          = @canvas.getContext('2d')
 
   resizeCanvas: ->
     @canvas.width  = @view.canvas.width
@@ -318,7 +322,7 @@ class DrawingLayer extends Drawer
   clearDrawing: ->
     @ctx.clearRect(0, 0, @canvas.width, @canvas.height)
 
-  importDrawing: (sourcePath) =>
+  importDrawing: (base64) =>
     @ctx.clearRect(0, 0, @canvas.width, @canvas.height)
     image = new Image()
     image.onload = () =>
@@ -335,7 +339,7 @@ class DrawingLayer extends Drawer
       @ctx.drawImage(image, (@canvas.width - width) / 2, (@canvas.height - height) / 2, width, height)
       @repaintView()
       return
-    image.src = sourcePath
+    image.src = base64
     return
 
   _rgbToCss: ([r, g, b]) ->
@@ -405,13 +409,13 @@ class DrawingLayer extends Drawer
   draw: ->
     @events.forEach((event) =>
       switch event.type
-        when 'clear-drawing' then @clearDrawing()
-        when 'line'          then @drawLine(event)
-        when 'stamp-image'   then @drawStamp(event)
-        when 'import-drawing' then @importDrawing(event.sourcePath)
+        when 'clear-drawing'  then @clearDrawing()
+        when 'line'           then @drawLine(event)
+        when 'stamp-image'    then @drawStamp(event)
+        when 'import-drawing' then @importDrawing(event.imageBase64)
         when 'zoom'          then @view.setZoom(event.scale)
         when 'reset-zoom'    then @view.setZoom(Math.floor(@view.worldWidth / 2))
-     )
+    )
 
   repaint: (model) ->
     # Potato --JTT 5/29/15
@@ -430,7 +434,9 @@ class DrawingLayer extends Drawer
     @view.ctx.drawImage(@canvas, 0, 0)
 
 class SpotlightDrawer extends Drawer
-  constructor: (@view) ->
+  constructor: (view) ->
+    super()
+    @view = view
 
   # Names and values taken from org.nlogo.render.SpotlightDrawer
   dimmed: "rgba(0, 0, 50, #{ 100 / 255 })"
@@ -491,7 +497,9 @@ class SpotlightDrawer extends Drawer
     )
 
 class TurtleDrawer extends Drawer
-  constructor: (@view) ->
+  constructor: (view) ->
+    super()
+    @view = view
     @turtleShapeDrawer = new ShapeDrawer({}, @view.onePixel)
     @linkDrawer = new LinkDrawer(@view, {})
 

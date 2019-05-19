@@ -74,6 +74,10 @@ class window.NetTangoController
 
     })
 
+  getNetTangoCode: () ->
+    defs = @ractive.findComponent('tangoDefs')
+    defs.assembleCode()
+
   # () => Unit
   recompile: () =>
     defs = @ractive.findComponent('tangoDefs')
@@ -84,16 +88,24 @@ class window.NetTangoController
   onModelLoad: () =>
     @builder = @ractive.findComponent('tangoBuilder')
     nt       = @storage.inProgress
+
     if (nt? and not @playMode and @firstLoad)
       @builder.load(nt)
-      @firstLoad = false
     else
       netTangoCodeElement = @theOutsideWorld.getElementById('ntango-code')
       if (netTangoCodeElement? and netTangoCodeElement.textContent? and netTangoCodeElement.textContent isnt '')
         data = JSON.parse(netTangoCodeElement.textContent)
+        @storageId = data.storageId
+        if (@playMode and @storageId? and nt.playProgress? and nt.playProgress[data.storageId]?)
+          progress    = nt.playProgress[@storageId]
+          data.spaces = progress.spaces
+          newCode     = NetTangoController.replaceNetTangoCode(data.code, progress.code)
+          data.code   = newCode
         @builder.load(data)
       else
         @builder.refreshCss()
+
+    @firstLoad = false
     return
 
   # () => Unit
@@ -102,6 +114,7 @@ class window.NetTangoController
     widgetController = @theOutsideWorld.getWidgetController()
     widgets = widgetController.ractive.get('widgetObj')
     @pauseForevers(widgets)
+    @spaceChangeListener?()
     return
 
   # (String) => Unit
@@ -145,7 +158,7 @@ class window.NetTangoController
 
     modelCodeMaybe = @theOutsideWorld.getModelCode()
     if(not modelCodeMaybe.success)
-      throw new Error("Unable to get existing NetLogo code for replacement")
+      throw new Error("Unable to get existing NetLogo code for export")
 
     netTangoData       = @builder.getNetTangoBuilderData()
     netTangoData.code  = modelCodeMaybe.result
@@ -177,15 +190,19 @@ class window.NetTangoController
     )
     return
 
+  # () => String
+  @generateStorageId: () ->
+    "ntb-#{Math.random().toString().slice(2).slice(0, 10)}"
+
   # (String, Document, NetTangoBuilderData) => Unit
   exportStandalone: (title, exportDom, netTangoData) ->
-    nlogoCodeElement = exportDom.getElementById('nlogo-code')
-    nlogoCodeElement.dataset.filename = title
-    nlogoCodeElement.textContent = netTangoData.code
+    netTangoData.storageId = NetTangoController.generateStorageId()
+
+    ntbCode = @getNetTangoCode()
+    newCode = NetTangoController.replaceNetTangoCode(netTangoData.code, ntbCode)
+    netTangoData.code = newCode
 
     netTangoCodeElement = exportDom.getElementById('ntango-code')
-    # For standalone we don't want the code in the netTango data (it's in the nlogo-code element) - JMB August 2018
-    delete netTangoData.code
     netTangoCodeElement.textContent = JSON.stringify(netTangoData)
 
     styleElement = @theOutsideWorld.getElementById('ntb-injected-style')
@@ -212,6 +229,21 @@ class window.NetTangoController
   storeNetTangoData: (netTangoData) ->
     set = (prop) => @storage.set(prop, netTangoData[prop])
     [ 'code', 'title', 'extraCss', 'spaces', 'tabOptions' ].forEach(set)
+    return
+
+  # () => Unit
+  storePlayProgress: () ->
+    netTangoData             = @builder.getNetTangoBuilderData()
+    playProgress             = @storage.get('playProgress') ? { }
+    builderCode              = @getNetTangoCode()
+    progress                 = { spaces: netTangoData.spaces, code: builderCode }
+    playProgress[@storageId] = progress
+    @storage.set('playProgress', playProgress)
+    return
+
+  # (() => Unit) => Unit
+  setSpaceChangeListener: (f) ->
+    @spaceChangeListener = f
     return
 
   # () => Unit

@@ -4,7 +4,7 @@ name := "Galapagos"
 
 version := "1.0-SNAPSHOT"
 
-scalaVersion := "2.12.6"
+scalaVersion := "2.12.8"
 
 scalacOptions ++= Seq(
   "-encoding", "UTF-8",
@@ -22,7 +22,7 @@ scalacOptions ++= Seq(
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, org.nlogo.PlayScrapePlugin)
 
-val tortoiseVersion = "1.0-83cd2f1"
+val tortoiseVersion = "1.0-6b88075"
 
 libraryDependencies ++= Seq(
   ehcache,
@@ -36,20 +36,25 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
+  "org.webjars.npm" % "jscolor-picker" % "2.0.4",
   "org.webjars" % "chosen" % "1.8.7",
-  "org.webjars.bower" % "filesaver" % "1.3.3",
+  "org.webjars.bowergithub.eligrey" % "filesaver.js" % "2.0.0",
   "org.webjars.npm" % "mousetrap" % "1.6.1",
   "org.webjars.bower" % "google-caja" % "6005.0.0",
-  "org.webjars" % "highcharts" % "6.1.1",
+  "org.webjars" % "highcharts" % "7.0.1",
   "org.webjars" % "jquery" % "3.3.1",
   "org.webjars" % "markdown-js" % "0.5.0-1",
   "org.webjars.npm" % "ractive" % "0.9.9",
-  "org.webjars.npm" % "codemirror" % "5.39.2"
+  "org.webjars.npm" % "codemirror" % "5.42.2",
+  "org.webjars.npm" % "synchrodecoder" % "1.0.2",
+  "org.webjars.npm" % "localforage" % "1.7.3"
 )
 
 resolvers += Resolver.bintrayRepo("netlogo", "TortoiseAux")
 
 resolvers += Resolver.bintrayRepo("netlogo", "NetLogoHeadless")
+
+unmanagedResourceDirectories in Assets += baseDirectory.value / "node_modules"
 
 // Used in Prod
 pipelineStages ++= Seq(digest)

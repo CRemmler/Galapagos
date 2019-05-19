@@ -90,34 +90,40 @@ class window.HighchartsOps extends PlotOps
       return
 
     registerPen = (pen) ->
-      num       = @_chart.series.length
-      mode      = @modeToString(pen.getDisplayMode())
-      isScatter = mode is 'scatter'
-      @_chart.addSeries({
+      num    = @_chart.series.length
+      series = @_chart.addSeries({
         color:      @colorToRGBString(pen.getColor()),
         data:       [],
         dataLabels: { enabled: false },
-        marker:     { enabled: isScatter, radius: if isScatter then 1 else 4 },
-        name:       pen.name,
-        type:       mode
+        name:       pen.name
       })
+      type    = @modeToString(pen.getDisplayMode())
+      options = thisOps.seriesTypeOptions(type)
+      series.update(options)
       @_penNameToSeriesNum[pen.name] = num
       return
 
+    # This is a workaround for a bug in CS2 `@` detection: https://github.com/jashkenas/coffeescript/issues/5111
+    # -JMB December 2018
+    thisOps = null
+
     resetPen = (pen) => () =>
-      @penToSeries(pen)?.setData([])
+      thisOps.penToSeries(pen)?.setData([])
       return
 
     addPoint = (pen) => (x, y) =>
       # Wrong, and disabled for performance reasons --JAB (10/19/14)
       # color = @colorToRGBString(pen.getColor())
       # @penToSeries(pen).addPoint({ marker: { fillColor: color }, x: x, y: y })
-      @penToSeries(pen).addPoint([x, y], false)
+      thisOps.penToSeries(pen).addPoint([x, y], false)
       return
 
     updatePenMode = (pen) => (mode) =>
-      type = @modeToString(mode)
-      @penToSeries(pen)?.update({ type: type })
+      series = thisOps.penToSeries(pen)
+      if series?
+        type    = thisOps.modeToString(mode)
+        options = thisOps.seriesTypeOptions(type)
+        series.update(options)
       return
 
     # Why doesn't the color change show up when I call `update` directly with a new color
@@ -125,13 +131,14 @@ class window.HighchartsOps extends PlotOps
     # Send me an e-mail if you know why I can't do that.
     # Leave a comment on this webzone if you know why I can't do that. --JAB (6/2/15)
     updatePenColor = (pen) => (color) =>
-      hcColor = @colorToRGBString(color)
-      series  = @penToSeries(pen)
+      hcColor = thisOps.colorToRGBString(color)
+      series  = thisOps.penToSeries(pen)
       series.options.color = hcColor
       series.update(series.options)
       return
 
     super(resize, reset, registerPen, resetPen, addPoint, updatePenMode, updatePenColor)
+    thisOps              = this
     @_chart              = Highcharts.chart(elemID, {})
     @_penNameToSeriesNum = {}
     #These pops remove the two redundant functions from the export-csv plugin
@@ -153,6 +160,16 @@ class window.HighchartsOps extends PlotOps
       when Line  then 'line'
       when Point then 'scatter'
       else 'line'
+
+  # (String) => Highcharts.Options
+  seriesTypeOptions: (type) ->
+    isScatter = type is 'scatter'
+    isLine    = type is 'line'
+    {
+      marker:     { enabled: isScatter, radius: if isScatter then 1 else 4 },
+      lineWidth:  if isLine then 2 else null,
+      type:       if isLine then 'scatter' else type
+    }
 
   # (PenBundle.Pen) => Highcharts.Series
   penToSeries: (pen) ->

@@ -303,7 +303,7 @@ private[controllers] trait RequestResultGenerator {
 
     val webjarURLs =
       Seq(
-        "filesaver/FileSaver.js",
+        "file-saver/FileSaver.js",
         "google-caja/html-sanitizer-minified.js",
         "markdown-js/markdown.js",
         "mousetrap/mousetrap.js",
@@ -311,6 +311,7 @@ private[controllers] trait RequestResultGenerator {
         "highcharts/modules/exporting.js",
         "highcharts/modules/export-data.js",
         "ractive/ractive.js",
+        "synchrodecoder/synchrodecoder.min.js",
         "codemirror/lib/codemirror.js",
         "codemirror/addon/dialog/dialog.js",
         "codemirror/addon/mode/simple.js",
@@ -338,6 +339,7 @@ private[controllers] trait RequestResultGenerator {
         "beak/widgets/ractives/subcomponent/spacer.js",
         "beak/widgets/ractives/subcomponent/tick-counter.js",
         "beak/widgets/ractives/subcomponent/variable.js",
+        "beak/widgets/ractives/async-user-dialog.js",
         "beak/widgets/ractives/context-menu.js",
         "beak/widgets/ractives/draggable.js",
         "beak/widgets/ractives/edit-form.js",
@@ -346,6 +348,7 @@ private[controllers] trait RequestResultGenerator {
         "beak/widgets/ractives/chooser.js",
         "beak/widgets/ractives/code-editor.js",
         "beak/widgets/ractives/console.js",
+        "beak/widgets/ractives/help-dialog.js",
         "beak/widgets/ractives/info.js",
         "beak/widgets/ractives/input.js",
         "beak/widgets/ractives/label.js",
@@ -364,7 +367,6 @@ private[controllers] trait RequestResultGenerator {
         "beak/widgets/event-traffic-control.js",
         "beak/widgets/handle-context-menu.js",
         "beak/widgets/handle-widget-selection.js",
-        "beak/widgets/help-dialog.js",
         "beak/widgets/initialize-ui.js",
         "beak/widgets/set-up-widgets.js",
         "beak/widgets/skeleton.js",

@@ -65,7 +65,8 @@ window.generateRactiveSkeleton = (container, widgets, code, info, isReadOnly, fi
 
     components: {
 
-      console:       RactiveConsoleWidget
+      asyncDialog:   RactiveAsyncUserDialog
+    , console:       RactiveConsoleWidget
     , contextMenu:   RactiveContextMenu
     , editableTitle: RactiveModelTitle
     , codePane:      RactiveModelCodeComponent
@@ -159,6 +160,7 @@ template =
 
       </div>
 
+      <asyncDialog wareaHeight="{{height}}" wareaWidth="{{width}}"></asyncDialog>
       <helpDialog isOverlayUp="{{isOverlayUp}}" isVisible="{{isHelpVisible}}" stateName="{{stateName}}" wareaHeight="{{height}}" wareaWidth="{{width}}"></helpDialog>
       <contextMenu></contextMenu>
 
@@ -220,8 +222,7 @@ template =
       {{/}}
     </div>
 
-    <input id="import-drawing-input" type="file" name="import-drawing" style="display: none;" />
-    <input id="import-world-input"   type="file" name="import-world"   style="display: none;" />
+    <input id="general-file-input" type="file" name="general-file" style="display: none;" />
 
   </div>
   """

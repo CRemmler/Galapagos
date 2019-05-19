@@ -32,7 +32,7 @@
 @extraBody = {
   <script src='@routes.Assets.versioned("lib/jquery/jquery.js").relative' type="text/javascript"></script>
   <script src='@routes.Assets.versioned("lib/chosen/chosen.jquery.js").relative' type="text/javascript"></script>
-  <script src='@routes.Assets.versioned("lib/filesaver/FileSaver.js").relative' type="text/javascript"></script>
+  <script src='@routes.Assets.versioned("lib/file-saver/FileSaver.js").relative' type="text/javascript"></script>
   <script>
     var exports = {};
   </script>
@@ -74,6 +74,10 @@
       }
       if (url === "Load") {
         exports.selectModel("Select a model");
+        if (modelContainer.contentWindow.location == "about:blank") {
+          modelContainer.contentWindow.location.replace("./web");
+          modelFileInput.value = "";
+        }
       } else if (url === "NewModel") {
         exports.selectModel("Select a model");
         modelContainer.contentWindow.location.replace("./web");

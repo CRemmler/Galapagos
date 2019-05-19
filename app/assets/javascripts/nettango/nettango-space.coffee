@@ -15,13 +15,26 @@ window.RactiveNetTangoSpace = Ractive.extend({
     'complete': (_) ->
       space = @get('space')
       @initNetTango(space)
-      space.netLogoCode = NetTango.exportCode(space.spaceId + '-canvas', 'NetLogo')
-      NetTango.onProgramChanged(space.spaceId + "-canvas", (ntCanvasId) =>
-        space.netLogoCode = NetTango.exportCode(ntCanvasId, 'NetLogo').trim()
-        @fire('ntb-code-change', {}, ntCanvasId, false)
+      canvasId = @getNetTangoCanvasId(space)
+      space.netLogoCode = NetTango.exportCode(canvasId, 'NetLogo')
+
+      NetTango.onProgramChanged(canvasId, (ntCanvasId) =>
+        if (@get('space')?)
+          # `space` can change after we're `complete`, so do not use the one we already got above -JMB 11/2018
+          s = @get('space')
+          s.chains = NetTango.save(canvasId).program.chains
+          s.netLogoCode = NetTango.exportCode(ntCanvasId, 'NetLogo').trim()
+          @fire('ntb-code-change', {}, ntCanvasId, false)
         return
       )
-      @fire('ntb-code-change', {}, space.spaceId + "-canvas", true)
+
+      @fire('ntb-code-change', {}, canvasId, true)
+
+      @observe('space', ->
+        @updateNetTango(@get('space'), false)
+        return
+      , { defer: true, strict: true }
+      )
       return
 
     # (Context, NetTangoSpace) => Boolean
@@ -138,6 +151,16 @@ window.RactiveNetTangoSpace = Ractive.extend({
         @updateNetTango(space)
       return
 
+    # (Context, Integer) => Unit
+    '*.ntb-duplicate-block': (_, blockNumber) ->
+      space    = @get('space')
+      original = space.defs.blocks[blockNumber]
+      copy = NetTangoBlockDefaults.copyBlock(original)
+      @push("space.defs.blocks", copy)
+      @set("space.defsJson", JSON.stringify(space.defs, null, '  '))
+      @updateNetTango(space)
+      return
+
   }
 
   # (String, NetTangoBlock, Integer, String, String) => Unit
@@ -148,45 +171,62 @@ window.RactiveNetTangoSpace = Ractive.extend({
     overlay.classList.add('ntb-block-edit-overlay')
     return
 
+  getNetTangoCanvasId: (space) ->
+    "#{space.spaceId}-canvas"
+
+  getNetTangoCanvas: (canvasId) ->
+    @find("##{canvasId}")
+
   # (NetTangoSpace) => Unit
   initNetTango: (space) ->
-    ntId = space.spaceId + "-canvas"
-    canvas = @find("##{ntId}")
+    canvasId      = @getNetTangoCanvasId(space)
+    canvas        = @getNetTangoCanvas(canvasId)
     canvas.height = space.height
-    canvas.width = space.width
-    NetTango.init(ntId, space.defs)
+    canvas.width  = space.width
+
+    NetTango.init(canvasId, space.defs)
+
+    space.chains = NetTango.save(canvasId).program.chains
     return
 
   # (NetTangoSpace) => Unit
-  updateNetTango: (space) ->
-    ntId = space.spaceId + "-canvas"
-    canvas = @find("##{ntId}")
+  updateNetTango: (space, keepOldChains = true) ->
+    canvasId      = @getNetTangoCanvasId(space)
+    canvas        = @getNetTangoCanvas(canvasId)
     canvas.height = space.height
-    canvas.width = space.width
-    old = NetTango.save(ntId)
-    # NetTango includes "empty" procedures as code with the save, but those cause ghost blocks when we change things
-    # and reload, so we clear them out -JMB August 2018
-    newChains = old.program.chains.filter((ch) -> ch.length > 1)
-    NetTango.restore(ntId, {
+    canvas.width  = space.width
+
+    newChains = if (keepOldChains)
+      old = NetTango.save(canvasId)
+      # NetTango includes "empty" procedures as code with the save, but those cause ghost blocks when we change things
+      # and reload, so we clear them out -JMB August 2018
+      old.program.chains.filter((ch) -> ch.length > 1)
+    else
+      space.chains.filter((ch) -> ch.length > 1)
+
+    NetTango.restore(canvasId, {
       blocks:      space.defs.blocks,
       expressions: space.defs.expressions,
       program:     { chains: newChains }
     })
-    space.netLogoCode = NetTango.exportCode(space.spaceId + '-canvas', 'NetLogo')
-    @fire('ntb-code-change', {}, space.spaceId + "-canvas", false)
+
+    space.netLogoCode = NetTango.exportCode(canvasId, 'NetLogo')
+    @fire('ntb-code-change', {}, canvasId, false)
     return
 
   # (NetTangoSpace) => Content
   createModifyMenuContent: (space) ->
-    dele = { eventName: 'ntb-delete-block', name: 'delete' }
+    dele = { eventName: 'ntb-delete-block',         name: 'delete' }
     edit = { eventName: 'ntb-show-edit-block-form', name: 'edit' }
-    up = { eventName: 'ntb-block-up', name: 'move up' }
-    dn = { eventName: 'ntb-block-down', name: 'move down' }
+    up   = { eventName: 'ntb-block-up',             name: 'move up' }
+    dn   = { eventName: 'ntb-block-down',           name: 'move down' }
+    dup  = { eventName: 'ntb-duplicate-block',      name: 'duplicate' }
     items = for def, num in space.defs.blocks
       {
         name:  def.action
-        items: [dele, edit, up, dn].map((x) -> Object.assign({ data: num }, x))
+        items: [dele, edit, up, dn, dup].map((x) -> Object.assign({ data: num }, x))
       }
+
     {
       name: "_",
       items: items
